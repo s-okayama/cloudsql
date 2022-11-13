@@ -88,10 +88,9 @@ Use the arrow keys to navigate: ↓ ↑ → ←
 ## ToDo
 - [x] Disable sound for Mac  
 → Add nobell.go
-- [ ] Add search feature
+- [x] Add search feature
+→ Can you search by /
 - [x] Add Select Database feature  
 → Add getDatabase & get listDatabase func
 - [ ] Add proxy & connect mode
 - [ ] Add Doctor feature(check cloud_sql_proxy & postgres & mysql)
-- [ ] Change from promptui to fuzzyfinder
-
