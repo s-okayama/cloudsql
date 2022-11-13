@@ -1,5 +1,5 @@
 SOURCE=cloudsql
-VERSION=v1.1.0
+VERSION=v1.1.1
 DIR=release
 
 mkdir -p ${DIR}
