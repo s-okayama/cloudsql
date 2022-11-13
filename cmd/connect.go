@@ -1,16 +1,17 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
 	"strconv"
-	"bufio"
 	"strings"
-        "path/filepath"
-	
+
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
 	"golang.org/x/oauth2/google"
@@ -25,26 +26,32 @@ const (
 
 func setProject() string {
 
-    f, err := os.Open(filepath.Join(os.Getenv("HOME"), "/.cloudsql/config"))
+	f, err := os.Open(filepath.Join(os.Getenv("HOME"), "/.cloudsql/config"))
 
-    if err != nil{
-        fmt.Println("error")
-    }
+	if err != nil {
+		fmt.Println("error")
+	}
 
-    defer f.Close()
+	defer f.Close()
 
-    lines := make([]string, 0, 100)
-    scanner := bufio.NewScanner(f)
-    for scanner.Scan() {
-      lines = append(lines, scanner.Text())
-    }
+	lines := make([]string, 0, 100)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	searcher := func(input string, index int) bool {
+		name := lines[index]
+		input = strings.Replace(strings.ToLower(input), " ", "", -1)
+
+		return strings.Contains(name, input)
+	}
 
 	prompt := promptui.Select{
-		Label: "Select Project",
-		//Items: []string{"initial-dev","initial-prd"},
-		Items: []string(lines),
-
-		Stdout: NoBellStdout,
+		Label:    "Select Project",
+		Items:    []string(lines),
+		Searcher: searcher,
+		Stdout:   NoBellStdout,
 	}
 
 	_, result, err := prompt.Run()
@@ -89,10 +96,18 @@ func getInstance() (string, string) {
 	project := setProject()
 	instancelist := listInstances(project)
 
+	searcher := func(input string, index int) bool {
+		name := instancelist[index]
+		input = strings.Replace(strings.ToLower(input), " ", "", -1)
+
+		return strings.Contains(name, input)
+	}
+
 	prompt := promptui.Select{
-		Label: "Select Project" + project,
-		Items: instancelist,
-		Stdout: NoBellStdout,
+		Label:    "Select Project" + project,
+		Items:    instancelist,
+		Searcher: searcher,
+		Stdout:   NoBellStdout,
 	}
 
 	_, result, err := prompt.Run()
@@ -108,37 +123,45 @@ func getInstance() (string, string) {
 }
 
 func listdatabases(instance string, project string) []string {
-    var list []string
+	var list []string
 	ctx := context.Background()
 
-    c, err := google.DefaultClient(ctx, sqladmin.CloudPlatformScope)
-    if err != nil {
-            log.Fatal(err)
-    }
+	c, err := google.DefaultClient(ctx, sqladmin.CloudPlatformScope)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    sqladminService, err := sqladmin.New(c)
-    if err != nil {
-            log.Fatal(err)
-    }
+	sqladminService, err := sqladmin.New(c)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	resp, err := sqladminService.Databases.List(project, instance).Context(ctx).Do()
 	for _, database := range resp.Items {
 		list = append(list, database.Name)
 	}
-    if err != nil {
-        log.Fatal(err)
-    }
+	if err != nil {
+		log.Fatal(err)
+	}
 
-   return list
+	return list
 }
 
 func getDatabase(instance string, project string) string {
 	databaseList := listdatabases(instance, project)
 
+	searcher := func(input string, index int) bool {
+		name := databaseList[index]
+		input = strings.Replace(strings.ToLower(input), " ", "", -1)
+
+		return strings.Contains(name, input)
+	}
+
 	prompt := promptui.Select{
-		Label: "Select Database",
-		Items: databaseList,
-		Stdout: NoBellStdout,
+		Label:    "Select Database",
+		Items:    databaseList,
+		Searcher: searcher,
+		Stdout:   NoBellStdout,
 	}
 
 	_, result, err := prompt.Run()
@@ -153,17 +176,17 @@ func getDatabase(instance string, project string) string {
 }
 
 func connectInstance(port int) {
-    var userName string
-    var dbTypeName string
-    var sqlInstanceName []string
-	sqlConnectionName, project  := getInstance()
+	var userName string
+	var dbTypeName string
+	var sqlInstanceName []string
+	sqlConnectionName, project := getInstance()
 	fmt.Println("Connecting Instance")
 	sqlInstanceName = strings.Split(sqlConnectionName, ":")
 
 	databaseList := getDatabase(sqlInstanceName[2], project)
 
 	fmt.Println(databaseList)
-	getdbtype := fmt.Sprintf("gcloud sql instances describe "+sqlInstanceName[2]+" --project="+project+" --format='value(databaseVersion)'")
+	getdbtype := fmt.Sprintf("gcloud sql instances describe " + sqlInstanceName[2] + " --project=" + project + " --format='value(databaseVersion)'")
 
 	dbtype := exec.Command("bash", "-c", getdbtype)
 	getdbtypeOut, err1 := dbtype.Output()
@@ -173,7 +196,7 @@ func connectInstance(port int) {
 	} else {
 		dbTypeName = strings.TrimSuffix(string(getdbtypeOut), "\n")
 	}
-    if strings.Contains(dbTypeName, "POSTGRES") {
+	if strings.Contains(dbTypeName, "POSTGRES") {
 		cmd := exec.Command("cloud_sql_proxy", "-enable_iam_login", "-instances="+sqlConnectionName+"=tcp:"+strconv.Itoa(port))
 		cmd.Stdout = os.Stdout
 		err := cmd.Start()
@@ -216,10 +239,8 @@ func connectInstance(port int) {
 
 		color.Blue("%s", "Can connect using:")
 		green := color.New(color.FgGreen)
-                //var re = regexp.MustCompile(
+		var re = regexp.MustCompile("@.*")
 		boldGreen := green.Add(color.Bold)
-		boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=3306 --database=%s\n", userName, databaseList)
-//boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=3306 --database\n", re.ReplaceAllString(userName, ""))
-
+		boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=3306 --database\n", re.ReplaceAllString(userName, ""))
 	}
 }
