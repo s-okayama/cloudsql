@@ -1,6 +1,7 @@
 # cloudsql
 ## Overview
-Save time for gcloud sql instances list and cloud_sql_proxy command.
+Save time for gcloud sql instances list and cloud_sql_proxy command.  
+![output](https://user-images.githubusercontent.com/66108143/201511654-c577bc7a-bcdb-45e9-a64c-f0abe4792680.gif)
 
 ## Install
 ```
