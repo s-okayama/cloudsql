@@ -241,6 +241,6 @@ func connectInstance(port int) {
 		green := color.New(color.FgGreen)
 		var re = regexp.MustCompile("@.*")
 		boldGreen := green.Add(color.Bold)
-		boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=3306 --database\n", re.ReplaceAllString(userName, ""))
+		boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=3306 --database=%s\n", re.ReplaceAllString(userName, ""), databaseList)
 	}
 }
