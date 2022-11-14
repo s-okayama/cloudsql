@@ -29,7 +29,7 @@ $ go build
 $ chmod +x cloudsql
 $ sudo mv cloudsql /usr/local/bin/
 
-- Set Config File
+- Set Config File(Insert Your GCP ID)
 $ mkdir ~/.cloudsql/
 $ vim ~/.cloudsql/config
 project-dev
