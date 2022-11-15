@@ -11,19 +11,12 @@ import (
 )
 
 func getPort() string {
-	command := fmt.Sprintf("ps aux  | grep cloud_sql_proxy | grep -v grep | awk -F '-instances=' '{print $NF}'")
-	processlist := exec.Command("bash", "-c", command)
-	output, _ := processlist.Output()
-	line := strings.TrimSuffix(string(output), "\n")
-	str := strings.Split(line, "\n")
-	if str[0] == "" {
-		fmt.Println("No Instance connected")
-		os.Exit(1)
-	}
+
+	str := listInstance()
 
 	prompt := promptui.Select{
-		Label: "Select Instance to disconnect",
-		Items: str,
+		Label:  "Select Instance to disconnect",
+		Items:  str,
 		Stdout: NoBellStdout,
 	}
 

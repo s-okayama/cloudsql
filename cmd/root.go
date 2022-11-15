@@ -36,6 +36,17 @@ var disconnectCmd = &cobra.Command{
 	},
 }
 
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "list connected cloudsql instance",
+	Run: func(cmd *cobra.Command, args []string) {
+
+		for _, value := range listInstance() {
+			fmt.Println(value)
+		}
+	},
+}
+
 func Execute() {
 	err := connectCmd.Execute()
 	if err != nil {
@@ -44,6 +55,6 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.AddCommand(disconnectCmd, connectCmd)
+	rootCmd.AddCommand(disconnectCmd, connectCmd, listCmd)
 	connectCmd.PersistentFlags().Int("port", 5432, "port")
 }
