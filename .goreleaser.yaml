@@ -25,7 +25,7 @@ brews:
 - tap:
     owner: s-okayama
     name: homebrew-cloudsql
-    token: "{{ GITHUB_TOKEN }}"
+    token: "{{ .HOMEBREW_TAP_GITHUB_TOKEN }}"
   folder: Formula
   homepage: https://github.com/s-okayama/cloudsql
   description: cloudsql
