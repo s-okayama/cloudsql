@@ -21,7 +21,11 @@ $ gcloud --version
 $ cloud_sql_proxy --version
 
 - Insall
-Chose Download or Build
+Chose Download or Build or brew
+# brew install
+$ brew tap s-okayama/homebrew-cloudsql
+$ brew install s-okayama/homebrew-cloudsql
+
 # Download
 https://github.com/s-okayama/cloudsql/releases
 
