@@ -4,8 +4,8 @@ Save time for gcloud sql instances list and cloud_sql_proxy command.
 ![output](https://user-images.githubusercontent.com/66108143/201511654-c577bc7a-bcdb-45e9-a64c-f0abe4792680.gif)
 
 ## Install
-```
 - Preparation　
+```
 1. Install Cloud SQL Auth Proxy 
 https://cloud.google.com/sql/docs/postgres/sql-proxy?hl=ja#install
 $ chmod +x cloud_sql_proxy
@@ -19,9 +19,10 @@ gcloud auth application-default login
 3. Check Preparation
 $ gcloud --version
 $ cloud_sql_proxy --version
-
+```
 - Insall
-Chose Download or Build or brew
+```
+- Chose Download or Build or brew
 # brew install
 $ brew tap s-okayama/homebrew-cloudsql
 $ brew install s-okayama/homebrew-cloudsql
@@ -34,8 +35,10 @@ $ git clone git@github.com:s-okayama/cloudsql.git
 $ go build
 $ chmod +x cloudsql
 $ sudo mv cloudsql /usr/local/bin/
+```
 
 - Set Config File(Insert Your GCP ID)
+```
 $ mkdir ~/.cloudsql/
 $ vim ~/.cloudsql/config
 project-dev
