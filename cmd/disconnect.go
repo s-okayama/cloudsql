@@ -11,7 +11,6 @@ import (
 )
 
 func getPort() string {
-
 	str := listInstance()
 
 	prompt := promptui.Select{

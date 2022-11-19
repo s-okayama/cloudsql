@@ -1,0 +1,33 @@
+before:
+  hooks:
+    - go mod download
+builds:
+- env:
+  - CGO_ENABLED=0
+  main: ./cloudsql/
+  binary: cloudsql
+archives:
+- replacements:
+    darwin: Darwin
+    386: i386
+    amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+brews:
+- tap:
+    owner: s-okayama
+    name: homebrew-cloudsql
+    token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+  folder: Formula
+  homepage: https://github.com/s-okayama/cloudsql
+  description: cloudsql
+  test: |
+    system "#{bin}/gorillang --version"
