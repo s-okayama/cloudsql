@@ -47,8 +47,8 @@ project-prd
 ```
 
 ## Usage
+- help
 ```
-##### help #####
 $ cloudsql        
 CloudSQL CLI
 
@@ -63,9 +63,10 @@ Available Commands:
 
 Flags:
   -h, --help   help for cloudsql
+```
 
-
-##### connect #####
+- connect
+```
 $ cloudsql connect
 Use the arrow keys to navigate: ↓ ↑ → ← 
 ? Select Project: 
@@ -87,9 +88,10 @@ Connecting Instance
 2022/11/06 21:21:45 Cloudsql proxy process is running in background, process_id: 65464
 Can connect using:
 psql -h localhost -U yamada.taro@gmail.com -p 5432 -d postgres
+```
 
-
-##### disconnect #####
+- disconnect
+```
 $ cloudsql disconnect          
 Use the arrow keys to navigate: ↓ ↑ → ← 
 ? Select Instance to disconnect: 
@@ -99,9 +101,10 @@ Use the arrow keys to navigate: ↓ ↑ → ←
 ## ToDo
 - [x] Disable sound for Mac  
 → Add nobell.go
-- [x] Add search feature
-→ Can you search by /
+- [x] Add search feature  
+→ search by /
 - [x] Add Select Database feature  
 → Add getDatabase & get listDatabase func
 - [ ] Add proxy & connect mode
 - [ ] Add Doctor feature(check cloud_sql_proxy & postgres & mysql)
+- [x] brew install
