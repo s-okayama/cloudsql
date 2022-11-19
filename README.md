@@ -23,21 +23,22 @@ $ cloud_sql_proxy --version
 - Insall
 Chose `Download` or `Build` or `brew install`
 ```
-# brew install
+- brew install
 $ brew tap s-okayama/homebrew-cloudsql
 $ brew install s-okayama/homebrew-cloudsql
 
-# Download
+- Download
 https://github.com/s-okayama/cloudsql/releases
 
-# Build
+- Build
 $ git clone git@github.com:s-okayama/cloudsql.git
 $ go build
 $ chmod +x cloudsql
 $ sudo mv cloudsql /usr/local/bin/
 ```
 
-- Set Config File(Insert Your GCP ID)
+- Set Config File
+Set Your GCP ID to a Config File
 ```
 $ mkdir ~/.cloudsql/
 $ vim ~/.cloudsql/config
