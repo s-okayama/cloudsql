@@ -11,8 +11,10 @@ https://cloud.google.com/sql/docs/postgres/sql-proxy?hl=ja#install
 $ chmod +x cloud_sql_proxy
 $ sudo mv cloud_sql_proxy /usr/local/bin/
 
-2. Install Gcloud CLI
+2. Install Gcloud CLI & Auth
 https://cloud.google.com/sdk/docs/install?hl=ja
+gcloud auth login
+gcloud auth application-default login
 
 3. Check Preparation
 $ gcloud --version
@@ -33,7 +35,7 @@ $ go build
 $ chmod +x cloudsql
 $ sudo mv cloudsql /usr/local/bin/
 
-- Set Config File
+- Set Config File(Insert Your GCP ID)
 $ mkdir ~/.cloudsql/
 $ vim ~/.cloudsql/config
 project-dev
