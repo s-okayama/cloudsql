@@ -47,7 +47,7 @@ func setProject() string {
 
 	prompt := promptui.Select{
 		Label:    "Select Project",
-		Items:    []string(lines),
+		Items:    lines,
 		Searcher: searcher,
 		Stdout:   NoBellStdout,
 	}
