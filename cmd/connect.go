@@ -14,14 +14,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/sqladmin/v1"
-)
-
-const (
-	InfoColor   = "\033[1;34m%s\033[0m"
-	NoticeColor = "\033[1;36m%s\033[0m"
-	GreenColor  = "\033[32m"
 )
 
 func setProject() string {
@@ -32,7 +25,12 @@ func setProject() string {
 		fmt.Println("error")
 	}
 
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Println("error")
+		}
+	}(f)
 
 	lines := make([]string, 0, 100)
 	scanner := bufio.NewScanner(f)
@@ -70,12 +68,7 @@ func listInstances(project string) []string {
 	var list []string
 	ctx := context.Background()
 
-	c, err := google.DefaultClient(ctx, sqladmin.CloudPlatformScope)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	sqladminService, err := sqladmin.New(c)
+	sqladminService, err := sqladmin.NewService(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -126,12 +119,7 @@ func listdatabases(instance string, project string) []string {
 	var list []string
 	ctx := context.Background()
 
-	c, err := google.DefaultClient(ctx, sqladmin.CloudPlatformScope)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	sqladminService, err := sqladmin.New(c)
+	sqladminService, err := sqladmin.NewService(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -217,10 +205,10 @@ func connectInstance(port int) {
 		color.Blue("%s", "Can connect using:")
 		green := color.New(color.FgGreen)
 		boldGreen := green.Add(color.Bold)
-		boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
+		_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
 	}
 	if strings.Contains(dbTypeName, "MYSQL") {
-		cmd := exec.Command("cloud_sql_proxy", "-instances="+sqlConnectionName+"=tcp:3306")
+		cmd := exec.Command("cloud_sql_proxy", "-instances="+sqlConnectionName+"=tcp:"+strconv.Itoa(port))
 		cmd.Stdout = os.Stdout
 		err := cmd.Start()
 		if err != nil {
@@ -241,6 +229,6 @@ func connectInstance(port int) {
 		green := color.New(color.FgGreen)
 		var re = regexp.MustCompile("@.*")
 		boldGreen := green.Add(color.Bold)
-		boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=3306 --database=%s\n", re.ReplaceAllString(userName, ""), databaseList)
+		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, databaseList)
 	}
 }
