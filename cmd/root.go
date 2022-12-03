@@ -2,11 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"net"
-	"os"
-	"strconv"
-
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var rootCmd = &cobra.Command{
@@ -18,13 +15,16 @@ var connectCmd = &cobra.Command{
 	Use:   "connect",
 	Short: "connect to cloudsql instance",
 	Run: func(cmd *cobra.Command, args []string) {
-		port, _ := cmd.Flags().GetInt("port")
-		_, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+		port, err := cmd.Flags().GetInt("port")
 		if err != nil {
-			fmt.Printf("Port already in use\n")
 			os.Exit(1)
 		}
-		connectInstance(port)
+
+		noConfig, err := cmd.Flags().GetBool("no-config")
+		if err != nil {
+			os.Exit(1)
+		}
+		connectInstance(port, noConfig)
 	},
 }
 
@@ -73,4 +73,5 @@ func Execute() {
 func init() {
 	rootCmd.AddCommand(disconnectCmd, connectCmd, listCmd, versionCmd, doctorCmd)
 	connectCmd.PersistentFlags().Int("port", 5432, "port")
+	connectCmd.Flags().BoolP("no-config", "", false, "load config from gcloud")
 }

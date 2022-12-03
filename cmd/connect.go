@@ -17,51 +17,92 @@ import (
 	"google.golang.org/api/sqladmin/v1"
 )
 
-func setProject() string {
+func setProject(noConfig bool) string {
 
-	f, err := os.Open(filepath.Join(os.Getenv("HOME"), "/.cloudsql/config"))
+	if noConfig == true {
+		var projId []string
+		getprojectcommand := fmt.Sprintf("gcloud projects list --format='value(project_id)'")
+		getproject := exec.Command("bash", "-c", getprojectcommand)
+		getprojectout, err := getproject.Output()
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			proj := strings.TrimSuffix(string(getprojectout), "\n")
+			projId = strings.Split(proj, "\n")
 
-	if err != nil {
-		fmt.Println("error")
-	}
+		}
+		searcher := func(input string, index int) bool {
+			name := projId[index]
+			input = strings.Replace(strings.ToLower(input), " ", "", -1)
 
-	defer func(f *os.File) {
-		err := f.Close()
+			return strings.Contains(name, input)
+		}
+
+		prompt := promptui.Select{
+			Label:    "Select GCP Project",
+			Items:    projId,
+			Searcher: searcher,
+			Stdout:   NoBellStdout,
+		}
+
+		_, result, err := prompt.Run()
+
+		if err != nil {
+			fmt.Printf("Prompt failed %v\n", err)
+			os.Exit(1)
+			return ""
+		}
+
+		fmt.Printf("Project ID: %q\n", result)
+		promptresult := strings.Split(result, ":")
+		projectId := promptresult[len(promptresult)-1]
+		return projectId
+
+	} else {
+		f, err := os.Open(filepath.Join(os.Getenv("HOME"), "/.cloudsql/config"))
+
 		if err != nil {
 			fmt.Println("error")
 		}
-	}(f)
 
-	lines := make([]string, 0, 100)
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+		defer func(f *os.File) {
+			err := f.Close()
+			if err != nil {
+				fmt.Println("error")
+			}
+		}(f)
+
+		lines := make([]string, 0, 100)
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			lines = append(lines, scanner.Text())
+		}
+
+		searcher := func(input string, index int) bool {
+			name := lines[index]
+			input = strings.Replace(strings.ToLower(input), " ", "", -1)
+
+			return strings.Contains(name, input)
+		}
+
+		prompt := promptui.Select{
+			Label:    "Select Project",
+			Items:    lines,
+			Searcher: searcher,
+			Stdout:   NoBellStdout,
+		}
+
+		_, result, err := prompt.Run()
+
+		if err != nil {
+			fmt.Printf("Prompt failed %v\n", err)
+			os.Exit(1)
+			return ""
+		}
+
+		fmt.Printf("You choose %q\n", result)
+		return result
 	}
-
-	searcher := func(input string, index int) bool {
-		name := lines[index]
-		input = strings.Replace(strings.ToLower(input), " ", "", -1)
-
-		return strings.Contains(name, input)
-	}
-
-	prompt := promptui.Select{
-		Label:    "Select Project",
-		Items:    lines,
-		Searcher: searcher,
-		Stdout:   NoBellStdout,
-	}
-
-	_, result, err := prompt.Run()
-
-	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		os.Exit(1)
-		return ""
-	}
-
-	fmt.Printf("You choose %q\n", result)
-	return result
 }
 
 func listInstances(project string) []string {
@@ -85,8 +126,7 @@ func listInstances(project string) []string {
 	return list
 }
 
-func getInstance() (string, string) {
-	project := setProject()
+func getInstance(project string) string {
 	instancelist := listInstances(project)
 
 	searcher := func(input string, index int) bool {
@@ -112,7 +152,7 @@ func getInstance() (string, string) {
 
 	fmt.Printf("You choose %q\n", result)
 
-	return result, project
+	return result
 }
 
 func listdatabases(instance string, project string) []string {
@@ -163,11 +203,12 @@ func getDatabase(instance string, project string) string {
 	return result
 }
 
-func connectInstance(port int) {
+func connectInstance(port int, noConfig bool) {
 	var userName string
 	var dbTypeName string
 	var sqlInstanceName []string
-	sqlConnectionName, project := getInstance()
+	project := setProject(noConfig)
+	var sqlConnectionName = getInstance(project)
 	fmt.Println("Connecting Instance")
 	sqlInstanceName = strings.Split(sqlConnectionName, ":")
 
