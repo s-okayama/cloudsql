@@ -106,5 +106,6 @@ Use the arrow keys to navigate: ↓ ↑ → ←
 - [x] Add Select Database feature  
 → Add getDatabase & get listDatabase func
 - [ ] Add proxy & connect mode
-- [ ] Add Doctor feature(check cloud_sql_proxy & postgres & mysql)
+- [x] Add Doctor feature(check cloud_sql_proxy & postgres & mysql)  
+→ Add doctor command
 - [x] brew install

@@ -40,10 +40,26 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list connected cloudsql instance",
 	Run: func(cmd *cobra.Command, args []string) {
-
 		for _, value := range listInstance() {
 			fmt.Println(value)
 		}
+	},
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version number of cloudsql",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("cloudsql 1.2.3")
+	},
+}
+
+var doctorCmd = &cobra.Command{
+	Use:   "doctor",
+	Short: "troubleshooting",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		doctor()
 	},
 }
 
@@ -55,6 +71,6 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.AddCommand(disconnectCmd, connectCmd, listCmd)
+	rootCmd.AddCommand(disconnectCmd, connectCmd, listCmd, versionCmd, doctorCmd)
 	connectCmd.PersistentFlags().Int("port", 5432, "port")
 }
