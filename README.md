@@ -38,7 +38,7 @@ $ sudo mv cloudsql /usr/local/bin/
 ```
 
 - Set Config File
-Set Your GCP ID to a Config File
+Set **Your GCP Project ID** to a Config File
 ```
 $ mkdir ~/.cloudsql/
 $ vim ~/.cloudsql/config
