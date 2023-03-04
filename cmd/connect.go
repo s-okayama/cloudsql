@@ -185,12 +185,13 @@ func connectInstance(port int) {
 		dbTypeName = strings.TrimSuffix(string(getdbtypeOut), "\n")
 	}
 	if strings.Contains(dbTypeName, "POSTGRES") {
-		cmd := exec.Command("cloud_sql_proxy", "-enable_iam_login", "-instances="+sqlConnectionName+"=tcp:"+strconv.Itoa(port))
-		cmd.Stdout = os.Stdout
+		cmdstr := "cloud-sql-proxy --auto-iam-authn --address 0.0.0.0 --private-ip --port " + strconv.Itoa(port) + " " + sqlConnectionName
+		cmd := exec.Command("bash", "-c", cmdstr)
 		err := cmd.Start()
 		if err != nil {
 			log.Fatal(err)
 		}
+		log.Println(cmd.String())
 		log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
 
 		command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
@@ -208,7 +209,7 @@ func connectInstance(port int) {
 		_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
 	}
 	if strings.Contains(dbTypeName, "MYSQL") {
-		cmd := exec.Command("cloud_sql_proxy", "-instances="+sqlConnectionName+"=tcp:"+strconv.Itoa(port))
+		cmd := exec.Command("cloud-sql-proxy", "--auto-iam-authn", "--address", "0.0.0.0", "--private-ip ", "--port", strconv.Itoa(port), sqlConnectionName)
 		cmd.Stdout = os.Stdout
 		err := cmd.Start()
 		if err != nil {

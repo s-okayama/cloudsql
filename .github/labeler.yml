@@ -1,0 +1,5 @@
+github-action:
+  - .github/**/*
+
+feature:
+  - cmd/*

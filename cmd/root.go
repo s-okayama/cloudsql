@@ -10,8 +10,8 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "cloudsql [sub]",
-	Short: "CloudSQL CLI",
+	Use:   "cloud-sql-proxy-v2-operator [sub]",
+	Short: "CloudSQL Proxy Version:2.0.0 Operator",
 }
 
 var connectCmd = &cobra.Command{
@@ -50,7 +50,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of cloudsql",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("cloudsql 1.2.3")
+		fmt.Println("cloud-sql-proxy-v2-operator 0.1.0")
 	},
 }
 

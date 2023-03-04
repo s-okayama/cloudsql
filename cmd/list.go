@@ -8,7 +8,7 @@ import (
 )
 
 func listInstance() []string {
-	command := fmt.Sprintf("ps aux  | grep cloud_sql_proxy | grep -v grep | awk -F '-instances=' '{print $NF}'")
+	command := fmt.Sprintf("ps aux | grep cloud-sql-proxy | grep -v grep | awk -F '-instances=' '{print $NF}'")
 	processlist := exec.Command("bash", "-c", command)
 	output, _ := processlist.Output()
 	line := strings.TrimSuffix(string(output), "\n")

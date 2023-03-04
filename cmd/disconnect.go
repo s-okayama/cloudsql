@@ -28,9 +28,14 @@ func getPort() string {
 	}
 
 	fmt.Printf("You choose %q\n", result)
-	res1 := strings.Split(result, ":")
-	port := res1[len(res1)-1]
-	return port
+
+	res1 := strings.Split(result, " ")
+	for i, r := range res1 {
+		if r == "--port" {
+			return res1[i+1]
+		}
+	}
+	return ""
 }
 
 func disconnectInstance() {

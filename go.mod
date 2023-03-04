@@ -1,4 +1,4 @@
-module s-okayama/cloudsql
+module TomoyukiSugiyama/cloud-sql-proxy-v2-operator
 
 go 1.19
 

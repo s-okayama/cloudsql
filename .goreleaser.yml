@@ -23,11 +23,11 @@ changelog:
     - '^test:'
 brews:
 - tap:
-    owner: s-okayama
-    name: homebrew-cloudsql
+    owner: TomoyukiSugiyama
+    name: homebrew-cloud-sql-proxy-v2-operator
     token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
   folder: Formula
-  homepage: https://github.com/s-okayama/cloudsql
-  description: cloudsql
+  homepage: https://github.com/TomoyukiSugiyama/cloud-sql-proxy-v2-operator
+  description: cloud-sql-proxy-v2-operator
   test: |
     system "#{bin}/cloudsql --version"
