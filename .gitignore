@@ -20,3 +20,5 @@ release/*
 dist/
 
 cloud-sql-proxy-v2-operator
+
+.DS_Store
