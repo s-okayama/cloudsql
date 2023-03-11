@@ -5,7 +5,7 @@ builds:
 - env:
   - CGO_ENABLED=0
   main: ./
-  binary: cloudsql
+  binary: cloud-sql-proxy-v2-operator
 archives:
 - replacements:
     darwin: Darwin
@@ -30,4 +30,4 @@ brews:
   homepage: https://github.com/TomoyukiSugiyama/cloud-sql-proxy-v2-operator
   description: cloud-sql-proxy-v2-operator
   test: |
-    system "#{bin}/cloudsql --version"
+    system "#{bin}/cloud-sql-proxy-v2-operator --version"
