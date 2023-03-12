@@ -99,7 +99,7 @@ brews:
 
     # Caveats for the user of your binary.
     # Default is empty.
-    caveats: "How to use this binary"
+    caveats: "cloud-sql-proxy-v2-operator need to install cloud-sql-proxy v2.x.x from https://cloud.google.com/sql/docs/postgres/sql-proxy?hl=ja#install"
 
     # Your app's homepage.
     # Default is empty.
@@ -107,7 +107,7 @@ brews:
 
     # Template of your app's description.
     # Default is empty.
-    description: "Software to create fast and easy drum rolls."
+    description: "Software to operate cloud-sql-proxy easiser."
 
     # SPDX identifier of your app's license.
     # Default is empty.
@@ -119,7 +119,7 @@ brews:
     # If set to auto, the release will not be uploaded to the homebrew tap
     # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
     # Default is false.
-    skip_upload: true
+    # skip_upload: true
 
     # Custom block for brew.
     # Can be used to specify alternate downloads for devel or head releases.
@@ -129,23 +129,23 @@ brews:
     #   ...
 
     # Packages your package depends on.
-    dependencies:
-      - name: git
-      - name: zsh
-        type: optional
-      - name: fish
-        version: v1.2.3
-      # if providing both version and type, only the type will be taken into
-      # account.
-      - name: elvish
-        type: optional
-        version: v1.2.3
+    # dependencies:
+    #   - name: git
+    #   - name: zsh
+    #     type: optional
+    #   - name: fish
+    #     version: v1.2.3
+    #   # if providing both version and type, only the type will be taken into
+    #   # account.
+    #   - name: elvish
+    #     type: optional
+    #     version: v1.2.3
 
 
     # Packages that conflict with your package.
-    conflicts:
-      - svn
-      - bash
+    # conflicts:
+    #   - svn
+    #   - bash
 
     # Specify for packages that run as a service.
     # Default is empty.
