@@ -11,7 +11,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "cloud-sql-proxy-v2-operator [sub]",
-	Short: "CloudSQL Proxy Version:2.0.0 Operator",
+	Short: "CloudSQL Proxy Operator",
 }
 
 var connectCmd = &cobra.Command{
@@ -50,7 +50,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of cloudsql",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("cloud-sql-proxy-v2-operator 0.1.0")
+		fmt.Println("cloud-sql-proxy-v2-operator 0.1.2")
 	},
 }
 
