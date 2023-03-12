@@ -71,18 +71,18 @@ brews:
     # gitlab or gitea)
     #
     # Default depends on the client.
-    url_template: "https://github.com/TomoyukiSugiyama/cloud-sql-proxy-v2-operator/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    # url_template: "https://github.com/TomoyukiSugiyama/cloud-sql-proxy-v2-operator/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
 
     # Allows you to set a custom download strategy. Note that you'll need
     # to implement the strategy and add it to your tap repository.
     # Example: https://docs.brew.sh/Formula-Cookbook#specifying-the-download-strategy-explicitly
     # Default is empty.
-    download_strategy: CurlDownloadStrategy
+    # download_strategy: CurlDownloadStrategy
 
     # Allows you to add a custom require_relative at the top of the formula
     # template.
     # Default is empty
-    custom_require: custom_download_strategy
+    # custom_require: custom_download_strategy
 
     # Git author used to commit to the repository.
     # Defaults are shown.
@@ -99,7 +99,7 @@ brews:
 
     # Caveats for the user of your binary.
     # Default is empty.
-    caveats: "cloud-sql-proxy-v2-operator need to install cloud-sql-proxy v2.x.x from https://cloud.google.com/sql/docs/postgres/sql-proxy?hl=ja#install"
+    caveats: "cloud-sql-proxy-v2-operator need to install gcloud cli from https://cloud.google.com/sdk/docs/install?hl=ja and cloud-sql-proxy v2.x.x from https://cloud.google.com/sql/docs/postgres/sql-proxy?hl=ja#install"
 
     # Your app's homepage.
     # Default is empty.
@@ -162,8 +162,8 @@ brews:
 
     # So you can `brew test` your formula.
     # Default is empty.
-    # test: |
-    #   system "#{bin}/foo --version"
+    test: |
+      system "#{bin}/cloud-sql-proxy-v2-operator --version"
     #   # ...
 
     # Custom install script for brew.
