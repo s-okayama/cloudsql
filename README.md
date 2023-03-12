@@ -1,5 +1,5 @@
 # cloud-sql-proxy-v2-operator
-cloud-sql-proxy-v2-operator is a software to operate cloud-sql-proxy easiser.
+cloud-sql-proxy-v2-operator is a software to operate cloud-sql-proxy easier.
 
 This project is forked from [s-okayama/cloudsql](https://github.com/s-okayama/cloudsql)
 
@@ -7,5 +7,5 @@ This project is forked from [s-okayama/cloudsql](https://github.com/s-okayama/cl
 
 ```
 brew tap TomoyukiSugiyama/homebrew-tap
-brew install tomoyukisugiyama/homebrew-tap/cloud-sql-proxy-v2-operator
+brew install tomoyukisugiyama/tap/cloud-sql-proxy-v2-operator
 ```

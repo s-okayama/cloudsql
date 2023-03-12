@@ -3,3 +3,6 @@ github-action:
 
 feature:
   - cmd/*
+
+doc:
+  - README.md
