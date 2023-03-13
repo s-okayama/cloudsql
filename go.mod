@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/chzyer/readline v1.5.1
-	github.com/fatih/color v1.14.1
+	github.com/fatih/color v1.15.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/cobra v1.6.1
 	google.golang.org/api v0.112.0
