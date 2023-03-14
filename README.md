@@ -8,8 +8,8 @@ Save time for gcloud sql instances list and cloud_sql_proxy command.
 ```
 1. Install Cloud SQL Auth Proxy 
 https://cloud.google.com/sql/docs/postgres/sql-proxy?hl=ja#install
-$ chmod +x cloud_sql_proxy
-$ sudo mv cloud_sql_proxy /usr/local/bin/
+$ chmod +x cloud-sql-proxy
+$ sudo mv cloud-sql-proxy /usr/local/bin/
 
 2. Install Gcloud CLI & Auth
 https://cloud.google.com/sdk/docs/install?hl=ja
