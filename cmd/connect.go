@@ -163,6 +163,24 @@ func getDatabase(instance string, project string) string {
 	return result
 }
 
+func connectWithPrivateIp() bool {
+	prompt := promptui.Select{
+		Label:  "Types of ip address",
+		Items:  []string{"Public ip", "Private ip"},
+		Stdout: NoBellStdout,
+	}
+
+	_, result, err := prompt.Run()
+
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return false
+	}
+	fmt.Printf("You choose %q\n", result)
+
+	return result == "Private ip"
+}
+
 func connectInstance(port int) {
 	var userName string
 	var dbTypeName string
@@ -184,6 +202,10 @@ func connectInstance(port int) {
 	} else {
 		dbTypeName = strings.TrimSuffix(string(getdbtypeOut), "\n")
 	}
+
+	isPrivate := connectWithPrivateIp()
+	fmt.Print(isPrivate)
+
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		cmdstr := "cloud-sql-proxy --auto-iam-authn --address 0.0.0.0 --private-ip --port " + strconv.Itoa(port) + " " + sqlConnectionName
 		cmd := exec.Command("bash", "-c", cmdstr)
