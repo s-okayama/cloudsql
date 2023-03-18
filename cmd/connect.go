@@ -203,10 +203,14 @@ func connectInstance(port int) {
 		dbTypeName = strings.TrimSuffix(string(getdbtypeOut), "\n")
 	}
 
+	bin := "cloud-sql-proxy "
+	options := "--auto-iam-authn --address 0.0.0.0 --port " + strconv.Itoa(port) + " "
 	isPrivate := connectWithPrivateIp()
-	fmt.Print(isPrivate)
+	if isPrivate {
+		options += "--private-ip "
+	}
+	cmdstr := bin + options + sqlConnectionName
 
-	cmdstr := "cloud-sql-proxy --auto-iam-authn --address 0.0.0.0 --private-ip --port " + strconv.Itoa(port) + " " + sqlConnectionName
 	cmd := exec.Command("bash", "-c", cmdstr)
 	err := cmd.Start()
 	if err != nil {
