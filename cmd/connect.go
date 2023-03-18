@@ -115,7 +115,7 @@ func getInstance() (string, string) {
 	return result, project
 }
 
-func listdatabases(instance string, project string) []string {
+func listDatabases(instance string, project string) []string {
 	var list []string
 	ctx := context.Background()
 
@@ -136,7 +136,7 @@ func listdatabases(instance string, project string) []string {
 }
 
 func getDatabase(instance string, project string) string {
-	databaseList := listdatabases(instance, project)
+	databaseList := listDatabases(instance, project)
 
 	searcher := func(input string, index int) bool {
 		name := databaseList[index]
