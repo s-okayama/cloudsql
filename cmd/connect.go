@@ -226,19 +226,15 @@ func connectInstance(port int) {
 		userName = strings.TrimSuffix(string(userOut), "\n")
 	}
 
+	color.Blue("%s", "Can connect using:")
+	green := color.New(color.FgGreen)
+	boldGreen := green.Add(color.Bold)
 	if strings.Contains(dbTypeName, "POSTGRES") {
-
-		color.Blue("%s", "Can connect using:")
-		green := color.New(color.FgGreen)
-		boldGreen := green.Add(color.Bold)
 		_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
 	}
 	if strings.Contains(dbTypeName, "MYSQL") {
-
-		color.Blue("%s", "Can connect using:")
-		green := color.New(color.FgGreen)
 		var re = regexp.MustCompile("@.*")
-		boldGreen := green.Add(color.Bold)
 		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, databaseList)
 	}
+
 }
