@@ -206,24 +206,23 @@ func connectInstance(port int) {
 	isPrivate := connectWithPrivateIp()
 	fmt.Print(isPrivate)
 
-	if strings.Contains(dbTypeName, "POSTGRES") {
-		cmdstr := "cloud-sql-proxy --auto-iam-authn --address 0.0.0.0 --private-ip --port " + strconv.Itoa(port) + " " + sqlConnectionName
-		cmd := exec.Command("bash", "-c", cmdstr)
-		err := cmd.Start()
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Println(cmd.String())
-		log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
+	cmdstr := "cloud-sql-proxy --auto-iam-authn --address 0.0.0.0 --private-ip --port " + strconv.Itoa(port) + " " + sqlConnectionName
+	cmd := exec.Command("bash", "-c", cmdstr)
+	err := cmd.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
+	command := "gcloud auth list --filter=status:ACTIVE --format='value(account)'"
+	user := exec.Command("bash", "-c", command)
+	userOut, err := user.Output()
+	if err != nil {
+		userName = "<username>"
+	} else {
+		userName = strings.TrimSuffix(string(userOut), "\n")
+	}
 
-		command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
-		user := exec.Command("bash", "-c", command)
-		userOut, err := user.Output()
-		if err != nil {
-			userName = "<username>"
-		} else {
-			userName = strings.TrimSuffix(string(userOut), "\n")
-		}
+	if strings.Contains(dbTypeName, "POSTGRES") {
 
 		color.Blue("%s", "Can connect using:")
 		green := color.New(color.FgGreen)
@@ -231,22 +230,6 @@ func connectInstance(port int) {
 		_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
 	}
 	if strings.Contains(dbTypeName, "MYSQL") {
-		cmd := exec.Command("cloud-sql-proxy", "--auto-iam-authn", "--address", "0.0.0.0", "--private-ip ", "--port", strconv.Itoa(port), sqlConnectionName)
-		cmd.Stdout = os.Stdout
-		err := cmd.Start()
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
-
-		command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
-		user := exec.Command("bash", "-c", command)
-		userOut, err := user.Output()
-		if err != nil {
-			userName = "<username>"
-		} else {
-			userName = strings.TrimSuffix(string(userOut), "\n")
-		}
 
 		color.Blue("%s", "Can connect using:")
 		green := color.New(color.FgGreen)
