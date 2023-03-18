@@ -16,7 +16,7 @@ func doctor() {
 	boldGreen := green.Add(color.Bold)
 
 	// Check gcloud sdk
-	gcloudversioncommand := fmt.Sprintf("gcloud version | head -n 1")
+	gcloudversioncommand := "gcloud version | head -n 1"
 	gcloudversion := exec.Command("bash", "-c", gcloudversioncommand)
 	gcloudversionout, err := gcloudversion.Output()
 	checkErr := true
@@ -29,7 +29,7 @@ func doctor() {
 	}
 
 	// Check user is authenticated in gcloud
-	gcloudusercommand := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
+	gcloudusercommand := "gcloud auth list --filter=status:ACTIVE --format='value(account)'"
 	gclouduser := exec.Command("bash", "-c", gcloudusercommand)
 	gclouduserout, err := gclouduser.Output()
 	if err != nil {
@@ -83,7 +83,7 @@ func doctor() {
 		fmt.Println("config file: ok")
 	}
 
-	if checkErr == true {
+	if checkErr {
 		_, _ = boldGreen.Println("Your system is All Green!")
 	}
 }
