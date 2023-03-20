@@ -18,7 +18,10 @@ var connectCmd = &cobra.Command{
 	Use:   "connect",
 	Short: "connect to cloudsql instance",
 	Run: func(cmd *cobra.Command, args []string) {
+		var c *Config
 		port, _ := cmd.Flags().GetInt("port")
+		c = New()
+		c.SetPort(port)
 		_, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 		if err != nil {
 			fmt.Printf("Port already in use\n")
