@@ -223,7 +223,7 @@ func (c *Config) showConnectionMethod() {
 	green := color.New(color.FgGreen)
 	boldGreen := green.Add(color.Bold)
 	if strings.Contains(c.dbType, "POSTGRES") {
-		_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", c.userName, c.port, c.dbList)
+		_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", c.userName, c.port, c.dbName)
 	}
 	if strings.Contains(c.dbType, "MYSQL") {
 		var re = regexp.MustCompile("@.*")
