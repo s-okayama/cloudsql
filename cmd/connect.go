@@ -18,7 +18,6 @@ import (
 )
 
 func setProject() string {
-
 	f, err := os.Open(filepath.Join(os.Getenv("HOME"), "/.cloudsql/config"))
 
 	if err != nil {
@@ -85,7 +84,7 @@ func listInstances(project string) []string {
 	return list
 }
 
-func getInstance() (string, string) {
+func (c *Config) getInstance() {
 	project := setProject()
 	instancelist := listInstances(project)
 
@@ -103,16 +102,16 @@ func getInstance() (string, string) {
 		Stdout:   NoBellStdout,
 	}
 
-	_, result, err := prompt.Run()
+	_, sqlConnectionName, err := prompt.Run()
 
 	if err != nil {
 		fmt.Printf("Prompt failed %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("You choose %q\n", result)
-
-	return result, project
+	fmt.Printf("You choose %q\n", sqlConnectionName)
+	c.SetProject(project)
+	c.SetSqlConnectionName(sqlConnectionName)
 }
 
 func listDatabases(instance string, project string) []string {
@@ -135,11 +134,11 @@ func listDatabases(instance string, project string) []string {
 	return list
 }
 
-func getDatabase(instance string, project string) string {
-	databaseList := listDatabases(instance, project)
+func (c *Config) getDb() {
+	c.dbList = listDatabases(c.sqlInstanceName, c.project)
 
 	searcher := func(input string, index int) bool {
-		name := databaseList[index]
+		name := c.dbList[index]
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
 
 		return strings.Contains(name, input)
@@ -147,20 +146,30 @@ func getDatabase(instance string, project string) string {
 
 	prompt := promptui.Select{
 		Label:    "Select Database",
-		Items:    databaseList,
+		Items:    c.dbList,
 		Searcher: searcher,
 		Stdout:   NoBellStdout,
 	}
 
-	_, result, err := prompt.Run()
+	_, dbName, err := prompt.Run()
 
 	if err != nil {
 		fmt.Printf("Prompt failed %v\n", err)
 		os.Exit(1)
-		return ""
 	}
+	c.SetDbName(dbName)
+}
 
-	return result
+func (c *Config) getDbType() {
+	getDbTypeCommand := fmt.Sprintf("gcloud sql instances describe " + c.sqlInstanceName + " --project=" + c.project + " --format='value(databaseVersion)'")
+	execDbTypeCommand := exec.Command("bash", "-c", getDbTypeCommand)
+	dbType, err := execDbTypeCommand.Output()
+
+	if err != nil {
+		c.SetDbType("<dbtype>")
+	} else {
+		c.SetDbType(strings.TrimSuffix(string(dbType), "\n"))
+	}
 }
 
 func connectWithPrivateIp() bool {
@@ -181,35 +190,14 @@ func connectWithPrivateIp() bool {
 	return result == "Private ip"
 }
 
-func connectInstance(port int) {
-	var userName string
-	var dbTypeName string
-	var sqlInstanceName []string
-	sqlConnectionName, project := getInstance()
-	fmt.Println("Connecting Instance")
-	sqlInstanceName = strings.Split(sqlConnectionName, ":")
-
-	databaseList := getDatabase(sqlInstanceName[2], project)
-
-	fmt.Println(databaseList)
-	getdbtype := fmt.Sprintf("gcloud sql instances describe " + sqlInstanceName[2] + " --project=" + project + " --format='value(databaseVersion)'")
-
-	dbtype := exec.Command("bash", "-c", getdbtype)
-	getdbtypeOut, err1 := dbtype.Output()
-
-	if err1 != nil {
-		dbTypeName = "<dbtype>"
-	} else {
-		dbTypeName = strings.TrimSuffix(string(getdbtypeOut), "\n")
-	}
-
+func (c *Config) connectInstanceWithCloudSqlProxy() {
 	bin := "cloud-sql-proxy "
-	options := "--auto-iam-authn --address 0.0.0.0 --port " + strconv.Itoa(port) + " "
-	isPrivate := connectWithPrivateIp()
-	if isPrivate {
+	options := "--auto-iam-authn --address 0.0.0.0 --port " + strconv.Itoa(c.port) + " "
+
+	if connectWithPrivateIp() {
 		options += "--private-ip "
 	}
-	cmdstr := bin + options + sqlConnectionName
+	cmdstr := bin + options + c.sqlConnectionName
 
 	cmd := exec.Command("bash", "-c", cmdstr)
 	err := cmd.Start()
@@ -217,24 +205,39 @@ func connectInstance(port int) {
 		log.Fatal(err)
 	}
 	log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
+}
+
+func (c *Config) getUserName() {
 	command := "gcloud auth list --filter=status:ACTIVE --format='value(account)'"
 	user := exec.Command("bash", "-c", command)
 	userOut, err := user.Output()
 	if err != nil {
-		userName = "<username>"
+		c.SetUserName("<username>")
 	} else {
-		userName = strings.TrimSuffix(string(userOut), "\n")
+		c.SetUserName(strings.TrimSuffix(string(userOut), "\n"))
 	}
+}
 
+func (c *Config) showConnectionMethod() {
 	color.Blue("%s", "Can connect using:")
 	green := color.New(color.FgGreen)
 	boldGreen := green.Add(color.Bold)
-	if strings.Contains(dbTypeName, "POSTGRES") {
-		_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
+	if strings.Contains(c.dbType, "POSTGRES") {
+		_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", c.userName, c.port, c.dbList)
 	}
-	if strings.Contains(dbTypeName, "MYSQL") {
+	if strings.Contains(c.dbType, "MYSQL") {
 		var re = regexp.MustCompile("@.*")
-		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, databaseList)
+		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(c.userName, ""), c.port, c.dbList)
 	}
+}
 
+func (c *Config) connectInstance() {
+	c.getInstance()
+	fmt.Println("Connecting Instance")
+	c.getDb()
+	fmt.Println(c.dbName)
+	c.getDbType()
+	c.connectInstanceWithCloudSqlProxy()
+	c.getUserName()
+	c.showConnectionMethod()
 }
