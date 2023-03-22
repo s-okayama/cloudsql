@@ -40,15 +40,15 @@ func doctor() {
 		fmt.Printf("Authenticated user account: %s", gclouduserout)
 	}
 
-	// Check cloud_sql_proxy
-	cloudsqlproxyversion := exec.Command("cloud_sql_proxy", "--version")
+	// Check cloud-sql-proxy
+	cloudsqlproxyversion := exec.Command("cloud-sql-proxy", "--version")
 	cloudsqlproxyversionout, err := cloudsqlproxyversion.Output()
 	if err != nil {
-		_, _ = boldRed.Println("Please check cloud_sql_proxy")
+		_, _ = boldRed.Println("Please check cloud-sql-proxy")
 		_, _ = boldRed.Println("Error: %s", err)
 		checkErr = false
 	} else {
-		fmt.Printf("cloud_sql_proxy version: %s", cloudsqlproxyversionout)
+		fmt.Printf("cloud-sql-proxy version: %s", cloudsqlproxyversionout)
 	}
 
 	// Check psql
@@ -85,5 +85,26 @@ func doctor() {
 
 	if checkErr == true {
 		_, _ = boldGreen.Println("Your system is All Green!")
+	}
+}
+
+func checkVersionCloudSqlProxy() {
+	red := color.New(color.FgRed)
+	boldRed := red.Add(color.Bold)
+	green := color.New(color.FgGreen)
+
+	boldGreen := green.Add(color.Bold)
+
+	// Check Version cloud-sql-proxy
+	cloudsqlproxyversion := exec.Command("cloud-sql-proxy", "--version")
+	cloudsqlproxyversionout, err := cloudsqlproxyversion.Output()
+	if err != nil {
+		_, _ = boldRed.Println("Error: %s", err)
+		_, _ = boldRed.Println("Please upgrade your cloud-sql-proxy version to 2 or higher")
+		_, _ = boldGreen.Println("Install URL:https://cloud.google.com/sql/docs/postgres/sql-proxy?hl=ja#install")
+		os.Exit(1)
+
+	} else {
+		fmt.Printf("cloud-sql-proxy version: %s", cloudsqlproxyversionout)
 	}
 }

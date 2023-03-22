@@ -155,7 +155,7 @@ func getInstance(project string) string {
 	return result
 }
 
-func listdatabases(instance string, project string) []string {
+func listDatabases(instance string, project string) []string {
 	var list []string
 	ctx := context.Background()
 
@@ -176,7 +176,7 @@ func listdatabases(instance string, project string) []string {
 }
 
 func getDatabase(instance string, project string) string {
-	databaseList := listdatabases(instance, project)
+	databaseList := listDatabases(instance, project)
 
 	searcher := func(input string, index int) bool {
 		name := databaseList[index]
@@ -204,6 +204,7 @@ func getDatabase(instance string, project string) string {
 }
 
 func connectInstance(port int, noConfig bool) {
+	//checkVersionCloudSqlProxy()
 	var userName string
 	var dbTypeName string
 	var sqlInstanceName []string
@@ -226,7 +227,7 @@ func connectInstance(port int, noConfig bool) {
 		dbTypeName = strings.TrimSuffix(string(getdbtypeOut), "\n")
 	}
 	if strings.Contains(dbTypeName, "POSTGRES") {
-		cmd := exec.Command("cloud_sql_proxy", "-enable_iam_login", "-instances="+sqlConnectionName+"=tcp:"+strconv.Itoa(port))
+		cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
 		cmd.Stdout = os.Stdout
 		err := cmd.Start()
 		if err != nil {
@@ -249,7 +250,7 @@ func connectInstance(port int, noConfig bool) {
 		_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
 	}
 	if strings.Contains(dbTypeName, "MYSQL") {
-		cmd := exec.Command("cloud_sql_proxy", "-instances="+sqlConnectionName+"=tcp:"+strconv.Itoa(port))
+		cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
 		cmd.Stdout = os.Stdout
 		err := cmd.Start()
 		if err != nil {
