@@ -28,7 +28,7 @@ func getPort() string {
 	}
 
 	fmt.Printf("You choose %q\n", result)
-	res1 := strings.Split(result, ":")
+	res1 := strings.Split(result, "=")
 	port := res1[len(res1)-1]
 	return port
 }

@@ -1,9 +1,13 @@
 # cloudsql
 ## Overview
-Save time for gcloud sql instances list and cloud_sql_proxy command.  
+Save time for gcloud sql instances list and cloud-sql-proxy command.  
 ![output](https://user-images.githubusercontent.com/66108143/201511654-c577bc7a-bcdb-45e9-a64c-f0abe4792680.gif)
 
 ## Install
+- Information  
+__When cloud-sql-proxy was updated from version 1 to 2, the command was changed from cloud_sql_proxy to cloud-sql-proxy (underscores are now hyphens). Please upgrade to the new version (v2) if you are using the old version (v1).__
+
+
 - Preparation　
 ```
 1. Install Cloud SQL Auth Proxy 
@@ -18,7 +22,7 @@ gcloud auth application-default login
 
 3. Check Preparation
 $ gcloud --version
-$ cloud_sql_proxy --version
+$ cloud-sql-proxy --version
 ```
 - Insall
 Chose `Download` or `Build` or `brew install`
@@ -67,6 +71,7 @@ Flags:
 
 - connect
 ```
+# You can set sub-command "--port" like this. → $ cloudsql connect --port 12345
 $ cloudsql connect
 Use the arrow keys to navigate: ↓ ↑ → ← 
 ? Select Project: 
@@ -98,6 +103,19 @@ Use the arrow keys to navigate: ↓ ↑ → ←
   ▸ project-dev:asia-northeast1:stg-postgres-0e80e42e=tcp:5432
 ```
 
+- doctor
+```
+$ cloudsql doctor
+cloudsql % go run cloudsql.go doctor
+gcloud version: Google Cloud SDK 420.0.0
+Authenticated user account: xxxxx@example.com
+cloud-sql-proxy version: cloud-sql-proxy version 2.0.0
+psql version: psql (PostgreSQL) 15.2
+mysql version: mysql  Ver 8.0.32 for macos12.6 on arm64 (Homebrew)
+config file: ok
+Your system is All Green!
+```
+
 ## ToDo
 - [x] Disable sound for Mac  
 → Add nobell.go
@@ -106,6 +124,8 @@ Use the arrow keys to navigate: ↓ ↑ → ←
 - [x] Add Select Database feature  
 → Add getDatabase & get listDatabase func
 - [ ] Add proxy & connect mode
-- [x] Add Doctor feature(check cloud_sql_proxy & postgres & mysql)  
+- [x] Add Doctor feature(check cloud-sql-proxy & postgres & mysql)  
 → Add doctor command
 - [x] brew install
+- [x] Support PostgreSQL cloud-sql-proxy version 2.0.0 
+- [ ] Support MySQL cloud-sql-proxy version 2.0.0
