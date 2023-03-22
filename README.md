@@ -127,4 +127,5 @@ Your system is All Green!
 - [x] Add Doctor feature(check cloud-sql-proxy & postgres & mysql)  
 → Add doctor command
 - [x] brew install
-- [x] Support cloud-sql-proxy version 2.0.0
+- [x] Support PostgreSQL cloud-sql-proxy version 2.0.0 
+- [ ] Support MySQL cloud-sql-proxy version 2.0.0
