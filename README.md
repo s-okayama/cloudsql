@@ -71,6 +71,7 @@ Flags:
 
 - connect
 ```
+# You can set sub-command "--port" like this. → $ cloudsql connect --port 12345
 $ cloudsql connect
 Use the arrow keys to navigate: ↓ ↑ → ← 
 ? Select Project: 
@@ -102,6 +103,19 @@ Use the arrow keys to navigate: ↓ ↑ → ←
   ▸ project-dev:asia-northeast1:stg-postgres-0e80e42e=tcp:5432
 ```
 
+- doctor
+```
+$ cloudsql doctor
+cloudsql % go run cloudsql.go doctor
+gcloud version: Google Cloud SDK 420.0.0
+Authenticated user account: xxxxx@example.com
+cloud-sql-proxy version: cloud-sql-proxy version 2.0.0
+psql version: psql (PostgreSQL) 15.2
+mysql version: mysql  Ver 8.0.32 for macos12.6 on arm64 (Homebrew)
+config file: ok
+Your system is All Green!
+```
+
 ## ToDo
 - [x] Disable sound for Mac  
 → Add nobell.go
@@ -113,3 +127,4 @@ Use the arrow keys to navigate: ↓ ↑ → ←
 - [x] Add Doctor feature(check cloud-sql-proxy & postgres & mysql)  
 → Add doctor command
 - [x] brew install
+- [x] Support cloud-sql-proxy version 2.0.0
