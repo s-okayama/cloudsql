@@ -204,7 +204,7 @@ func getDatabase(instance string, project string) string {
 }
 
 func connectInstance(port int, noConfig bool) {
-	//checkVersionCloudSqlProxy()
+	checkVersionCloudSqlProxy()
 	var userName string
 	var dbTypeName string
 	var sqlInstanceName []string

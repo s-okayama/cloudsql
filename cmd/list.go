@@ -8,6 +8,7 @@ import (
 )
 
 func listInstance() []string {
+	checkVersionCloudSqlProxy()
 	command := fmt.Sprintf("ps aux | grep cloud-sql-proxy | grep -v grep | grep -v 'awk -F cloud-sql-proxy' | awk -F 'cloud-sql-proxy ' '{print $NF}'")
 	processlist := exec.Command("bash", "-c", command)
 	output, _ := processlist.Output()

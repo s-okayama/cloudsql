@@ -34,6 +34,7 @@ func getPort() string {
 }
 
 func disconnectInstance() {
+	checkVersionCloudSqlProxy()
 	port := getPort()
 	command := fmt.Sprintf("lsof -i tcp:%s | grep LISTEN | awk '{print $2}' | xargs kill -9", port)
 	cmd := exec.Command("bash", "-c", command)
