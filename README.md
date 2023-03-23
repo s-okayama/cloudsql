@@ -29,7 +29,7 @@ Chose `Download` or `Build` or `brew install`
 ```
 - brew install
 $ brew tap s-okayama/homebrew-cloudsql
-$ brew install s-okayama/homebrew-cloudsql
+$ brew install s-okayama/cloudsql/cloudsql
 
 - Download
 https://github.com/s-okayama/cloudsql/releases
