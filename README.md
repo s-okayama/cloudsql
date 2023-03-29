@@ -33,6 +33,8 @@ $ brew install s-okayama/cloudsql/cloudsql
 
 - Download
 https://github.com/s-okayama/cloudsql/releases
+$ chmod +x cloudsql
+$ sudo mv cloudsql /usr/local/bin/
 
 - Build
 $ git clone git@github.com:s-okayama/cloudsql.git
