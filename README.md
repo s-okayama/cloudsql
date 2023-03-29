@@ -17,8 +17,8 @@ $ sudo mv cloud-sql-proxy /usr/local/bin/
 
 2. Install Gcloud CLI & Auth
 https://cloud.google.com/sdk/docs/install?hl=ja
-gcloud auth login
-gcloud auth application-default login
+$ gcloud auth login
+$ gcloud auth application-default login
 
 3. Check Preparation
 $ gcloud --version
