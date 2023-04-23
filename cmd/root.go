@@ -17,13 +17,14 @@ var connectCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		port, err := cmd.Flags().GetInt("port")
 		if err != nil {
-			os.Exit(1)
+			os.Exit(0)
 		}
 
 		noConfig, err := cmd.Flags().GetBool("no-config")
 		if err != nil {
-			os.Exit(1)
+			os.Exit(0)
 		}
+		checkPort(port)
 		connectInstance(port, noConfig)
 	},
 }
@@ -50,7 +51,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of cloudsql",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("cloudsql 2.0.1")
+		fmt.Println("cloudsql 2.0.2")
 	},
 }
 
@@ -66,12 +67,13 @@ var doctorCmd = &cobra.Command{
 func Execute() {
 	err := connectCmd.Execute()
 	if err != nil {
-		os.Exit(1)
+		os.Exit(0)
 	}
 }
 
 func init() {
 	rootCmd.AddCommand(disconnectCmd, connectCmd, listCmd, versionCmd, doctorCmd)
+	checkVersionCloudSqlProxy()
 	connectCmd.PersistentFlags().Int("port", 5432, "port")
 	connectCmd.Flags().BoolP("no-config", "", false, "load config from gcloud")
 }

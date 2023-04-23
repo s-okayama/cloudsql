@@ -131,3 +131,4 @@ Your system is All Green!
 - [x] brew install
 - [x] Support PostgreSQL cloud-sql-proxy version 2.0.0 
 - [ ] Support MySQL cloud-sql-proxy version 2.0.0
+- [x] Display error when Port is already in use
