@@ -196,7 +196,7 @@ func getDatabase(instance string, project string) string {
 
 	if err != nil {
 		fmt.Printf("Prompt failed %v\n", err)
-		os.Exit(1)
+		os.Exit(0)
 		return ""
 	}
 
@@ -204,7 +204,6 @@ func getDatabase(instance string, project string) string {
 }
 
 func connectInstance(port int, noConfig bool) {
-	checkVersionCloudSqlProxy()
 	var userName string
 	var dbTypeName string
 	var sqlInstanceName []string

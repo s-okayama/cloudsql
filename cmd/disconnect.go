@@ -23,7 +23,7 @@ func getPort() string {
 
 	if err != nil {
 		fmt.Printf("Prompt failed %v\n", err)
-		os.Exit(1)
+		os.Exit(0)
 		return ""
 	}
 
@@ -34,7 +34,6 @@ func getPort() string {
 }
 
 func disconnectInstance() {
-	checkVersionCloudSqlProxy()
 	port := getPort()
 	command := fmt.Sprintf("lsof -i tcp:%s | grep LISTEN | awk '{print $2}' | xargs kill -9", port)
 	cmd := exec.Command("bash", "-c", command)
