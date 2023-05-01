@@ -7,7 +7,7 @@ require (
 	github.com/fatih/color v1.15.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/cobra v1.7.0
-	google.golang.org/api v0.119.0
+	google.golang.org/api v0.120.0
 )
 
 require (
