@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"google.golang.org/api/sqladmin/v1"
 	"log"
 	"os"
 	"os/exec"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
-	"google.golang.org/api/sqladmin/v1"
 )
 
 func setProject(noConfig bool) string {
@@ -203,7 +203,7 @@ func getDatabase(instance string, project string) string {
 	return result
 }
 
-func connectInstance(port int, noConfig bool) {
+func connectInstance(port int, noConfig bool, debug bool) {
 	var userName string
 	var dbTypeName string
 	var sqlInstanceName []string
@@ -226,27 +226,42 @@ func connectInstance(port int, noConfig bool) {
 		dbTypeName = strings.TrimSuffix(string(getdbtypeOut), "\n")
 	}
 	if strings.Contains(dbTypeName, "POSTGRES") {
-		cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
-		cmd.Stdout = os.Stdout
-		err := cmd.Start()
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
-
-		command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
-		user := exec.Command("bash", "-c", command)
-		userOut, err := user.Output()
-		if err != nil {
-			userName = "<username>"
+		if debug == true {
+			fmt.Printf("a")
+			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--port="+strconv.Itoa(port))
+			stderr, _ := cmd.StderrPipe()
+			err := cmd.Start()
+			if err != nil {
+				log.Fatal(err)
+				fmt.Println("--- stderr ---")
+				scanner2 := bufio.NewScanner(stderr)
+				for scanner2.Scan() {
+					fmt.Println(scanner2.Text())
+				}
+			}
 		} else {
-			userName = strings.TrimSuffix(string(userOut), "\n")
-		}
+			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
+			cmd.Stdout = os.Stdout
+			err := cmd.Start()
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Printf("Cloudsql proxy process is running in backgaaaround, process_id: %d\n", cmd.Process.Pid)
 
-		color.Blue("%s", "Can connect using:")
-		green := color.New(color.FgGreen)
-		boldGreen := green.Add(color.Bold)
-		_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
+			command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
+			user := exec.Command("bash", "-c", command)
+			userOut, err := user.Output()
+			if err != nil {
+				userName = "<username>"
+			} else {
+				userName = strings.TrimSuffix(string(userOut), "\n")
+			}
+
+			color.Blue("%s", "Can connect using:")
+			green := color.New(color.FgGreen)
+			boldGreen := green.Add(color.Bold)
+			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
+		}
 	}
 	if strings.Contains(dbTypeName, "MYSQL") {
 		cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
