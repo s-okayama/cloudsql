@@ -227,7 +227,7 @@ func connectInstance(port int, noConfig bool, debug bool) {
 	}
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		if debug == true {
-			fmt.Printf("a")
+			fmt.Printf("Debug Mode\n")
 			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--port="+strconv.Itoa(port))
 			stderr, _ := cmd.StderrPipe()
 			err := cmd.Start()
