@@ -85,11 +85,11 @@ milestones:
 upx:
   -
 brews:
-  - name: homebrew-cloudsql
-    directory: Formula
-    repository:
+  - repository:
+      name: homebrew-cloudsql
       owner: s-okayama
       token: "{{ .Env.GITHUB_TOKEN }}"
+    directory: Formula
     homepage: https://github.com/s-okayama/cloudsql
     description: cloudsql
     test: |
