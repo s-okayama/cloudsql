@@ -28,7 +28,6 @@ changelog:
       - '^test:'
 metadata:
 notarize:
-scoop:
 gomod:
 github_urls:
 release:
@@ -70,7 +69,7 @@ gitea_urls:
 force_token: github
 env:
   -
-version: 1
+version: 2
 dockers:
   -
 env_files:
@@ -81,20 +80,12 @@ winget:
   -
 docker_manifests:
   -
-build:
-docker_signs:
-  -
 milestones:
   -
 upx:
   -
 brews:
-  - tap:
-      owner: s-okayama
-      name: homebrew-cloudsql
-      token: "{{ .Env.GITHUB_TOKEN }}"
-    folder: Formula
-    homepage: https://github.com/s-okayama/cloudsql
+  - homepage: https://github.com/s-okayama/cloudsql
     description: cloudsql
     test: |
       system "#{bin}/cloudsql --version"
