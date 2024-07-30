@@ -225,6 +225,11 @@ func connectInstance(port int, noConfig bool, debug bool) {
 	} else {
 		dbTypeName = strings.TrimSuffix(string(getdbtypeOut), "\n")
 	}
+	if dbTypeName == "" || dbTypeName == "<dbtype>" {
+		fmt.Println("Error : You do not have permissions to CloudSQL or there is a problem with the gcloud command")
+		os.Exit(0)
+	}
+
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		if debug == true {
 			fmt.Printf("Debug Mode\n")
