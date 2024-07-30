@@ -86,6 +86,7 @@ upx:
   -
 brews:
   - name: homebrew-cloudsql
+    directory: Formula
     repository:
       owner: s-okayama
       token: "{{ .Env.GITHUB_TOKEN }}"
