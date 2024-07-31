@@ -203,7 +203,6 @@ func getDatabase(instance string, project string) string {
 }
 
 func connectInstance(port int, noConfig bool, debug bool) {
-	var userName string
 	var dbTypeName string
 	var sqlInstanceName []string
 	project := setProject(noConfig)
@@ -227,16 +226,24 @@ func connectInstance(port int, noConfig bool, debug bool) {
 		fmt.Println("Error : You do not have permissions to CloudSQL or there is a problem with the gcloud command")
 		os.Exit(0)
 	}
+	userName := getUser()
 
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		if debug {
-			fmt.Printf("Debug Mode\n")
-			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--port="+strconv.Itoa(port))
-
-			err := cmd.Start()
+			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
+			green := color.New(color.FgGreen)
+			boldGreen := green.Add(color.Bold)
+			color.Green("[Debug Mode]\nThe following commands are executed in the background.(This command is only valid for postgres currently)\n")
+			_, _ = boldGreen.Printf("%s\n", command)
+			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
+			debug := exec.Command("bash", "-c", command)
+			debug.Stdout = os.Stdout
+			debug.Stderr = os.Stderr
+			err := debug.Run()
 			if err != nil {
 				log.Fatal(err)
 			}
+
 		} else {
 			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
 			cmd.Stdout = os.Stdout
@@ -245,15 +252,6 @@ func connectInstance(port int, noConfig bool, debug bool) {
 				log.Fatal(err)
 			}
 			log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
-
-			command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
-			user := exec.Command("bash", "-c", command)
-			userOut, err := user.Output()
-			if err != nil {
-				userName = "<username>"
-			} else {
-				userName = strings.TrimSuffix(string(userOut), "\n")
-			}
 
 			color.Blue("Can connect using:")
 			green := color.New(color.FgGreen)
@@ -270,14 +268,7 @@ func connectInstance(port int, noConfig bool, debug bool) {
 		}
 		log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
 
-		command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
-		user := exec.Command("bash", "-c", command)
-		userOut, err := user.Output()
-		if err != nil {
-			userName = "<username>"
-		} else {
-			userName = strings.TrimSuffix(string(userOut), "\n")
-		}
+		//getUserするかも
 
 		color.Blue("Can connect using:")
 		green := color.New(color.FgGreen)
@@ -285,4 +276,17 @@ func connectInstance(port int, noConfig bool, debug bool) {
 		boldGreen := green.Add(color.Bold)
 		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, databaseList)
 	}
+}
+
+func getUser() string {
+	var userName string
+	command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
+	user := exec.Command("bash", "-c", command)
+	userOut, err := user.Output()
+	if err != nil {
+		userName = "<username>"
+	} else {
+		userName = strings.TrimSuffix(string(userOut), "\n")
+	}
+	return userName
 }
