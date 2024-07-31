@@ -18,8 +18,7 @@ import (
 )
 
 func setProject(noConfig bool) string {
-
-	if noConfig == true {
+	if noConfig {
 		var projId []string
 		getprojectcommand := fmt.Sprintf("gcloud projects list --format='value(project_id)'")
 		getproject := exec.Command("bash", "-c", getprojectcommand)
@@ -29,12 +28,10 @@ func setProject(noConfig bool) string {
 		} else {
 			proj := strings.TrimSuffix(string(getprojectout), "\n")
 			projId = strings.Split(proj, "\n")
-
 		}
 		searcher := func(input string, index int) bool {
 			name := projId[index]
 			input = strings.Replace(strings.ToLower(input), " ", "", -1)
-
 			return strings.Contains(name, input)
 		}
 
@@ -81,7 +78,6 @@ func setProject(noConfig bool) string {
 		searcher := func(input string, index int) bool {
 			name := lines[index]
 			input = strings.Replace(strings.ToLower(input), " ", "", -1)
-
 			return strings.Contains(name, input)
 		}
 
@@ -132,7 +128,6 @@ func getInstance(project string) string {
 	searcher := func(input string, index int) bool {
 		name := instancelist[index]
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
-
 		return strings.Contains(name, input)
 	}
 
@@ -186,7 +181,6 @@ func getDatabase(instance string, project string) string {
 	searcher := func(input string, index int) bool {
 		name := databaseList[index]
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
-
 		return strings.Contains(name, input)
 	}
 
@@ -235,18 +229,15 @@ func connectInstance(port int, noConfig bool, debug bool) {
 	}
 
 	if strings.Contains(dbTypeName, "POSTGRES") {
-		if debug == true {
+		if debug {
 			fmt.Printf("Debug Mode\n")
 			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--port="+strconv.Itoa(port))
-			stderr, _ := cmd.StderrPipe()
+			//stderr, _ := cmd.StderrPipe()
 			err := cmd.Start()
 			if err != nil {
 				log.Fatal(err)
-				fmt.Println("--- stderr ---")
-				scanner2 := bufio.NewScanner(stderr)
-				for scanner2.Scan() {
-					fmt.Println(scanner2.Text())
-				}
+				//} else {
+				//    log.Fatal(stderr)
 			}
 		} else {
 			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
@@ -255,7 +246,7 @@ func connectInstance(port int, noConfig bool, debug bool) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			log.Printf("Cloudsql proxy process is running in backgaaaround, process_id: %d\n", cmd.Process.Pid)
+			log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
 
 			command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
 			user := exec.Command("bash", "-c", command)
