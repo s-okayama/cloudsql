@@ -258,7 +258,7 @@ func connectInstance(port int, noConfig bool, debug bool) {
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		if debug {
 			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
-			color.Blue("[Debug Mode]\nThe following commands are executed in the background. (Debug Mode is only valid for postgres currently)\n")
+			color.Blue("[Debug Mode]\nThe following commands are executed in the background.\n")
 			_, _ = boldBlue.Printf("%s\n", command)
 			color.Green("Can connect using:\n")
 			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
@@ -284,6 +284,23 @@ func connectInstance(port int, noConfig bool, debug bool) {
 		}
 	}
 	if strings.Contains(dbTypeName, "MYSQL") {
+		if debug {
+			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --private-ip --debug --port=%d", sqlConnectionName, port)
+			color.Blue("[Debug Mode]\nThe following commands are executed in the background.\n")
+			_, _ = boldBlue.Printf("%s\n", command)
+			color.Green("Can connect using:\n")
+			var re = regexp.MustCompile("@.*")
+			_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d\n", re.ReplaceAllString(userName, ""), port)
+			debug := exec.Command("bash", "-c", command)
+			debug.Stdout = os.Stdout
+			debug.Stderr = os.Stderr
+			err := debug.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		port = 3306
 		cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
 		cmd.Stdout = os.Stdout
 		err := cmd.Start()
@@ -295,5 +312,7 @@ func connectInstance(port int, noConfig bool, debug bool) {
 		color.Blue("Can connect using:")
 		var re = regexp.MustCompile("@.*")
 		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, databaseList)
+		// Temporarily commented out when database is selected because the connection is not possible due to permission issues.
+		//_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, databaseList)
 	}
 }

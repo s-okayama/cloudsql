@@ -65,7 +65,10 @@ Available Commands:
   completion  Generate the autocompletion script for the specified shell
   connect     connect to cloudsql instance
   disconnect  disconnect cloudsql instance
+  doctor      troubleshooting
   help        Help about any command
+  list        list connected cloudsql instance
+  version     Print the version number of cloudsql
 
 Flags:
   -h, --help   help for cloudsql
@@ -125,10 +128,10 @@ Your system is All Green!
 → search by /
 - [x] Add Select Database feature  
 → Add getDatabase & get listDatabase func
-- [ ] Add proxy & connect mode
+- [x] Add proxy & connect mode
 - [x] Add Doctor feature(check cloud-sql-proxy & postgres & mysql)  
 → Add doctor command
 - [x] brew install
 - [x] Support PostgreSQL cloud-sql-proxy version 2.0.0 
-- [ ] Support MySQL cloud-sql-proxy version 2.0.0
+- [x] Support MySQL cloud-sql-proxy version 2.0.0
 - [x] Display error when Port is already in use
