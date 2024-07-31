@@ -137,7 +137,7 @@ func getInstance(project string) string {
 	}
 
 	prompt := promptui.Select{
-		Label:    "Select Project" + project,
+		Label:    "Select Instance",
 		Items:    instancelist,
 		Searcher: searcher,
 		Stdout:   NoBellStdout,
@@ -211,7 +211,6 @@ func connectInstance(port int, noConfig bool, debug bool) {
 	var sqlConnectionName = getInstance(project)
 	fmt.Println("Connecting Instance")
 	sqlInstanceName = strings.Split(sqlConnectionName, ":")
-
 	databaseList := getDatabase(sqlInstanceName[2], project)
 
 	fmt.Println(databaseList)
