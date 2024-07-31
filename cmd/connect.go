@@ -202,10 +202,43 @@ func getDatabase(instance string, project string) string {
 	return result
 }
 
+func getUser() string {
+	var userName string
+	command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
+	user := exec.Command("bash", "-c", command)
+	userOut, err := user.Output()
+	if err != nil {
+		userName = "<username>"
+	} else {
+		userName = strings.TrimSuffix(string(userOut), "\n")
+	}
+	return userName
+}
+
+func getdbTypeName(instance string, project string) string {
+	var result string
+
+	getdbtype := fmt.Sprintf("gcloud sql instances describe " + instance + " --project=" + project + " --format='value(databaseVersion)'")
+	dbtype := exec.Command("bash", "-c", getdbtype)
+	getdbtypeOut, err1 := dbtype.Output()
+
+	if err1 != nil {
+		result = "<dbtype>"
+	} else {
+		result = strings.TrimSuffix(string(getdbtypeOut), "\n")
+	}
+	if result == "" || result == "<dbtype>" {
+		fmt.Println("Error : You do not have permissions to CloudSQL or there is a problem with the gcloud command")
+		os.Exit(0)
+	}
+	return result
+}
+
 func connectInstance(port int, noConfig bool, debug bool) {
 	var dbTypeName string
 	var sqlInstanceName []string
 	var sqlConnectionName string
+	var userName string
 
 	// color setting
 	green := color.New(color.FgGreen)
@@ -213,26 +246,15 @@ func connectInstance(port int, noConfig bool, debug bool) {
 	boldGreen := green.Add(color.Bold)
 	boldBlue := blue.Add(color.Bold)
 
+	// select database
 	project := setProject(noConfig)
 	sqlConnectionName = getInstance(project)
 	sqlInstanceName = strings.Split(sqlConnectionName, ":")
 	databaseList := getDatabase(sqlInstanceName[2], project)
-	getdbtype := fmt.Sprintf("gcloud sql instances describe " + sqlInstanceName[2] + " --project=" + project + " --format='value(databaseVersion)'")
+	dbTypeName = getdbTypeName(sqlInstanceName[2], project)
+	userName = getUser()
 
-	dbtype := exec.Command("bash", "-c", getdbtype)
-	getdbtypeOut, err1 := dbtype.Output()
-
-	if err1 != nil {
-		dbTypeName = "<dbtype>"
-	} else {
-		dbTypeName = strings.TrimSuffix(string(getdbtypeOut), "\n")
-	}
-	if dbTypeName == "" || dbTypeName == "<dbtype>" {
-		fmt.Println("Error : You do not have permissions to CloudSQL or there is a problem with the gcloud command")
-		os.Exit(0)
-	}
-	userName := getUser()
-
+	// connect instance
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		if debug {
 			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
@@ -274,17 +296,4 @@ func connectInstance(port int, noConfig bool, debug bool) {
 		var re = regexp.MustCompile("@.*")
 		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, databaseList)
 	}
-}
-
-func getUser() string {
-	var userName string
-	command := fmt.Sprintf("gcloud auth list --filter=status:ACTIVE --format='value(account)'")
-	user := exec.Command("bash", "-c", command)
-	userOut, err := user.Output()
-	if err != nil {
-		userName = "<username>"
-	} else {
-		userName = strings.TrimSuffix(string(userOut), "\n")
-	}
-	return userName
 }
