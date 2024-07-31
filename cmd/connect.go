@@ -232,12 +232,10 @@ func connectInstance(port int, noConfig bool, debug bool) {
 		if debug {
 			fmt.Printf("Debug Mode\n")
 			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--port="+strconv.Itoa(port))
-			stderr, _ := cmd.StderrPipe()
+
 			err := cmd.Start()
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				log.Fatal(stderr)
 			}
 		} else {
 			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
@@ -257,7 +255,7 @@ func connectInstance(port int, noConfig bool, debug bool) {
 				userName = strings.TrimSuffix(string(userOut), "\n")
 			}
 
-			color.Blue("%s", "Can connect using:")
+			color.Blue("Can connect using:")
 			green := color.New(color.FgGreen)
 			boldGreen := green.Add(color.Bold)
 			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
@@ -281,7 +279,7 @@ func connectInstance(port int, noConfig bool, debug bool) {
 			userName = strings.TrimSuffix(string(userOut), "\n")
 		}
 
-		color.Blue("%s", "Can connect using:")
+		color.Blue("Can connect using:")
 		green := color.New(color.FgGreen)
 		var re = regexp.MustCompile("@.*")
 		boldGreen := green.Add(color.Bold)
