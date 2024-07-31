@@ -205,13 +205,18 @@ func getDatabase(instance string, project string) string {
 func connectInstance(port int, noConfig bool, debug bool) {
 	var dbTypeName string
 	var sqlInstanceName []string
+	var sqlConnectionName string
+
+	// color setting
+	green := color.New(color.FgGreen)
+	blue := color.New(color.FgBlue)
+	boldGreen := green.Add(color.Bold)
+	boldBlue := blue.Add(color.Bold)
+
 	project := setProject(noConfig)
-	var sqlConnectionName = getInstance(project)
-	fmt.Println("Connecting Instance")
+	sqlConnectionName = getInstance(project)
 	sqlInstanceName = strings.Split(sqlConnectionName, ":")
 	databaseList := getDatabase(sqlInstanceName[2], project)
-
-	fmt.Println(databaseList)
 	getdbtype := fmt.Sprintf("gcloud sql instances describe " + sqlInstanceName[2] + " --project=" + project + " --format='value(databaseVersion)'")
 
 	dbtype := exec.Command("bash", "-c", getdbtype)
@@ -231,10 +236,9 @@ func connectInstance(port int, noConfig bool, debug bool) {
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		if debug {
 			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
-			green := color.New(color.FgGreen)
-			boldGreen := green.Add(color.Bold)
-			color.Green("[Debug Mode]\nThe following commands are executed in the background.(This command is only valid for postgres currently)\n")
-			_, _ = boldGreen.Printf("%s\n", command)
+			color.Blue("[Debug Mode]\nThe following commands are executed in the background. (Debug Mode is only valid for postgres currently)\n")
+			_, _ = boldBlue.Printf("%s\n", command)
+			color.Green("Can connect using:\n")
 			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
 			debug := exec.Command("bash", "-c", command)
 			debug.Stdout = os.Stdout
@@ -254,8 +258,6 @@ func connectInstance(port int, noConfig bool, debug bool) {
 			log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
 
 			color.Blue("Can connect using:")
-			green := color.New(color.FgGreen)
-			boldGreen := green.Add(color.Bold)
 			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
 		}
 	}
@@ -268,12 +270,8 @@ func connectInstance(port int, noConfig bool, debug bool) {
 		}
 		log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
 
-		//getUserするかも
-
 		color.Blue("Can connect using:")
-		green := color.New(color.FgGreen)
 		var re = regexp.MustCompile("@.*")
-		boldGreen := green.Add(color.Bold)
 		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, databaseList)
 	}
 }
