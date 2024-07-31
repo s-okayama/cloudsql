@@ -258,7 +258,7 @@ func connectInstance(port int, noConfig bool, debug bool) {
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		if debug {
 			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
-			color.Blue("[Debug Mode]\nThe following commands are executed in the background.\n")
+			color.Blue("[Debug Mode]\nThe following commands are executed in foreground.\n")
 			_, _ = boldBlue.Printf("%s\n", command)
 			color.Green("Can connect using:\n")
 			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
@@ -286,7 +286,7 @@ func connectInstance(port int, noConfig bool, debug bool) {
 	if strings.Contains(dbTypeName, "MYSQL") {
 		if debug {
 			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --private-ip --debug --port=%d", sqlConnectionName, port)
-			color.Blue("[Debug Mode]\nThe following commands are executed in the background.\n")
+			color.Blue("[Debug Mode]\nThe following commands are executed in foreground.\n")
 			_, _ = boldBlue.Printf("%s\n", command)
 			color.Green("Can connect using:\n")
 			var re = regexp.MustCompile("@.*")
