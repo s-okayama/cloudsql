@@ -165,11 +165,16 @@ func listDatabases(instance string, project string) []string {
 	}
 
 	resp, err := sqladminService.Databases.List(project, instance).Context(ctx).Do()
-	for _, database := range resp.Items {
-		list = append(list, database.Name)
-	}
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if resp == nil || resp.Items == nil {
+		log.Fatal("No databases found or unable to retrieve databases")
+	}
+
+	for _, database := range resp.Items {
+		list = append(list, database.Name)
 	}
 
 	return list
