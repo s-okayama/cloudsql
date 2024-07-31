@@ -232,12 +232,12 @@ func connectInstance(port int, noConfig bool, debug bool) {
 		if debug {
 			fmt.Printf("Debug Mode\n")
 			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--port="+strconv.Itoa(port))
-			//stderr, _ := cmd.StderrPipe()
+			stderr, _ := cmd.StderrPipe()
 			err := cmd.Start()
 			if err != nil {
 				log.Fatal(err)
-				//} else {
-				//    log.Fatal(stderr)
+			} else {
+				log.Fatal(stderr)
 			}
 		} else {
 			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
