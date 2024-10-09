@@ -24,7 +24,7 @@ $ gcloud auth application-default login
 $ gcloud --version
 $ cloud-sql-proxy --version
 ```
-- Insall
+- Install
 Chose `Download` or `Build` or `brew install`
 ```
 - brew install
