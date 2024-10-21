@@ -32,7 +32,7 @@ func doctor() {
 	checkErr := true
 	if err != nil {
 		_, _ = boldRed.Println("Please check gcloud sdk")
-		_, _ = boldRed.Printf("Error: %s", err)
+		_, _ = boldRed.Printf("Error: %s\n", err)
 		checkErr = false
 	} else if version < postgresSupportVersion {
 		_, _ = boldRed.Printf("Your gcloud sdk version is %s. This version does not support Cloudsql 16.\n", version)
@@ -48,7 +48,7 @@ func doctor() {
 	gclouduserout, err := gclouduser.Output()
 	if err != nil {
 		_, _ = boldRed.Println("User not authenticatedRun: gcloud auth application-default login")
-		_, _ = boldRed.Printf("Error: %s", err)
+		_, _ = boldRed.Printf("Error: %s\n", err)
 		checkErr = false
 	} else {
 		fmt.Printf("Authenticated user account: %s", gclouduserout)
@@ -59,7 +59,7 @@ func doctor() {
 	cloudsqlproxyversionout, err := cloudsqlproxyversion.Output()
 	if err != nil {
 		_, _ = boldRed.Println("Please check cloud-sql-proxy")
-		_, _ = boldRed.Printf("Error: %s", err)
+		_, _ = boldRed.Printf("Error: %s\n", err)
 		checkErr = false
 	} else {
 		fmt.Printf("cloud-sql-proxy version: %s", cloudsqlproxyversionout)
@@ -70,7 +70,7 @@ func doctor() {
 	psqlversionout, err := psqlversion.Output()
 	if err != nil {
 		_, _ = boldRed.Println("Please check psql")
-		_, _ = boldRed.Printf("Error: %s", err)
+		_, _ = boldRed.Printf("Error: %s\n", err)
 		checkErr = false
 	} else {
 		fmt.Printf("psql version: %s", psqlversionout)
@@ -81,7 +81,7 @@ func doctor() {
 	mysqlversionout, err := mysqlversion.Output()
 	if err != nil {
 		_, _ = boldRed.Println("Please check mysql")
-		_, _ = boldRed.Printf("Error: %s", err)
+		_, _ = boldRed.Printf("Error: %s\n", err)
 		checkErr = false
 	} else {
 		fmt.Printf("mysql version: %s", mysqlversionout)
@@ -91,7 +91,7 @@ func doctor() {
 	_, err = os.Stat(filepath.Join(os.Getenv("HOME"), "/.cloudsql/config"))
 	if err != nil {
 		_, _ = boldRed.Println("Please check config file ~/.cloudsql/config")
-		_, _ = boldRed.Printf("Error: %s", err)
+		_, _ = boldRed.Printf("Error: %s\n", err)
 		checkErr = false
 	} else {
 		fmt.Println("config file: ok")
