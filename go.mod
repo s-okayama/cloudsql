@@ -4,7 +4,7 @@ go 1.22.3
 
 require (
 	github.com/chzyer/readline v1.5.1
-	github.com/fatih/color v1.17.0
+	github.com/fatih/color v1.18.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/cobra v1.8.1
 	google.golang.org/api v0.201.0
