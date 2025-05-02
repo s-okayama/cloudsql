@@ -1,7 +1,8 @@
 module s-okayama/cloudsql
 
-go 1.22.3
-toolchain go1.24.1
+go 1.23.0
+
+toolchain go1.24.2
 
 require (
 	github.com/chzyer/readline v1.5.1
