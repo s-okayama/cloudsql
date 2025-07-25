@@ -72,7 +72,7 @@ func init() {
 		Use:   "version",
 		Short: "Print the version number of cloudsql",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("cloudsql 2.1.0")
+			fmt.Println("cloudsql 2.1.1")
 		},
 	}
 
