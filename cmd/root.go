@@ -37,8 +37,12 @@ func init() {
 			if err != nil {
 				log.Fatalf("Error getting debug: %v", err)
 			}
+			direct, err := cmd.Flags().GetBool("direct")
+			if err != nil {
+				log.Fatalf("Error getting direct: %v", err)
+			}
 			checkPort(port)
-			connectInstance(port, noConfig, debug)
+			connectInstance(port, noConfig, debug, direct)
 		},
 	}
 
@@ -46,7 +50,11 @@ func init() {
 		Use:   "disconnect",
 		Short: "disconnect cloudsql instance",
 		Run: func(cmd *cobra.Command, args []string) {
-			disconnectInstance()
+			all, err := cmd.Flags().GetBool("all")
+			if err != nil {
+				log.Fatalf("Error getting all: %v", err)
+			}
+			disconnectInstance(all)
 		},
 	}
 
@@ -64,7 +72,7 @@ func init() {
 		Use:   "version",
 		Short: "Print the version number of cloudsql",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("cloudsql 2.1.0")
+			fmt.Println("cloudsql 2.1.1")
 		},
 	}
 
@@ -82,11 +90,13 @@ func init() {
 	connectCmd.PersistentFlags().Int("port", 5432, "port")
 	connectCmd.Flags().BoolP("no-config", "", false, "load config from gcloud")
 	connectCmd.Flags().BoolP("debug", "", false, "for troubleshooting. you can get cloud-sql-proxy log")
+	connectCmd.Flags().BoolP("direct", "", false, "connect to cloudsql instance directly")
+	disconnectCmd.Flags().BoolP("all", "a", false, "disconnect all cloudsql instance")
 }
 
 func Execute() {
-	err := connectCmd.Execute()
+	err := rootCmd.Execute()
 	if err != nil {
-		log.Fatalf("Error executing connect command: %v", err)
+		log.Fatalf("Error executing command: %v", err)
 	}
 }

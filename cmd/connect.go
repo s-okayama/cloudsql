@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"google.golang.org/api/sqladmin/v1"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
@@ -234,7 +236,7 @@ func getdbTypeName(instance string, project string) string {
 	return result
 }
 
-func connectInstance(port int, noConfig bool, debug bool) {
+func connectInstance(port int, noConfig bool, debug bool, direct bool) {
 	var dbTypeName string
 	var sqlInstanceName []string
 	var sqlConnectionName string
@@ -256,28 +258,83 @@ func connectInstance(port int, noConfig bool, debug bool) {
 
 	// connect instance
 	if strings.Contains(dbTypeName, "POSTGRES") {
-		if debug {
-			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
-			color.Blue("[Debug Mode]\nThe following commands are executed in foreground.\n")
-			_, _ = boldBlue.Printf("%s\n", command)
-			color.Green("Can connect using:\n")
-			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
-			debug := exec.Command("bash", "-c", command)
-			debug.Stdout = os.Stdout
-			debug.Stderr = os.Stderr
-			err := debug.Run()
+		if direct {
+			var err error
+			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --private-ip --port=%d", sqlConnectionName, port)
+			if debug {
+				command = fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
+				color.Blue("[Debug Mode]\nThe following commands are executed in foreground.\n")
+				_, _ = boldBlue.Printf("%s\n", command)
+			}
+
+			proxyCmd := exec.Command("bash", "-c", command)
+			if debug {
+				proxyCmd.Stderr = os.Stderr
+				proxyCmd.Stdout = os.Stdout
+			}
+			err = proxyCmd.Start()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-		} else {
-			cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
-			cmd.Stdout = os.Stdout
-			err := cmd.Start()
+			log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", proxyCmd.Process.Pid)
+
+			// Retry logic to wait for the proxy to be ready.
+			var conn net.Conn
+			retryCount := 30
+			for i := 0; i < retryCount; i++ {
+				conn, err = net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", port), 500*time.Millisecond)
+				if err == nil {
+					_ = conn.Close()
+					break
+				}
+				time.Sleep(500 * time.Millisecond)
+			}
+
+			if err != nil {
+				log.Println("Failed to connect to cloud-sql-proxy. Killing proxy.")
+				_ = proxyCmd.Process.Kill()
+				log.Fatalf("Proxy connection error: %v", err)
+			}
+
+			psqlCommand := fmt.Sprintf("psql -h localhost -U %s -p %d -d %s", userName, port, databaseList)
+
+			psqlCmd := exec.Command("bash", "-c", psqlCommand)
+			psqlCmd.Stdout = os.Stdout
+			psqlCmd.Stderr = os.Stderr
+			psqlCmd.Stdin = os.Stdin
+			err = psqlCmd.Run()
+			if err != nil {
+				log.Println("psql command failed. Killing proxy.")
+				_ = proxyCmd.Process.Kill()
+				log.Fatal(err)
+			}
+			err = proxyCmd.Process.Kill()
 			if err != nil {
 				log.Fatal(err)
 			}
-			log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
+		} else {
+			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --private-ip --quiet --port=%d", sqlConnectionName, port)
+			if debug {
+				command = fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
+				color.Blue("[Debug Mode]\nThe following commands are executed in foreground.\n")
+				_, _ = boldBlue.Printf("%s\n", command)
+				debug := exec.Command("bash", "-c", command)
+				debug.Stdout = os.Stdout
+				debug.Stderr = os.Stderr
+				err := debug.Run()
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
+				cmd.Stdout = os.Stdout
+				err := cmd.Start()
+				if err != nil {
+					log.Fatal(err)
+				}
+				log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
+			}
 
 			color.Blue("Can connect using:")
 			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
