@@ -33,14 +33,26 @@ func getPort() string {
 	return port
 }
 
-func disconnectInstance() {
-	port := getPort()
-	command := fmt.Sprintf("lsof -i tcp:%s | grep LISTEN | awk '{print $2}' | xargs kill -9", port)
-	cmd := exec.Command("bash", "-c", command)
-	cmd.Stdout = os.Stdout
-	err := cmd.Start()
-	if err != nil {
-		log.Fatal(err)
+func disconnectInstance(all bool) {
+	if all {
+		command := "ps aux | grep 'cloud-sql-proxy' | grep -v grep | awk '{print $2}' | xargs kill -9"
+		cmd := exec.Command("bash", "-c", command)
+		err := cmd.Run()
+		if err != nil {
+			// This can happen if no processes are found, which is not a fatal error.
+			log.Println("No cloud-sql-proxy processes found to disconnect, or an error occurred.")
+			return
+		}
+		log.Println("All cloud-sql-proxy instances disconnected.")
+	} else {
+		port := getPort()
+		command := fmt.Sprintf("lsof -i tcp:%s | grep LISTEN | awk '{print $2}' | xargs kill -9", port)
+		cmd := exec.Command("bash", "-c", command)
+		cmd.Stdout = os.Stdout
+		err := cmd.Run()
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("Instance disconnected")
 	}
-	log.Printf("Instance disconnected")
 }
