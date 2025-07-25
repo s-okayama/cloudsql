@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"google.golang.org/api/sqladmin/v1"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -258,6 +259,7 @@ func connectInstance(port int, noConfig bool, debug bool, direct bool) {
 	// connect instance
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		if direct {
+			var err error
 			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --private-ip --port=%d", sqlConnectionName, port)
 			if debug {
 				command = fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
@@ -270,16 +272,30 @@ func connectInstance(port int, noConfig bool, debug bool, direct bool) {
 				proxyCmd.Stderr = os.Stderr
 				proxyCmd.Stdout = os.Stdout
 			}
-			err := proxyCmd.Start()
+			err = proxyCmd.Start()
 			if err != nil {
 				log.Fatal(err)
 			}
 
 			log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", proxyCmd.Process.Pid)
 
-			// Wait for the proxy to be ready.
-			// TODO: Implement a more robust check for proxy readiness.
-			time.Sleep(5 * time.Second)
+			// Retry logic to wait for the proxy to be ready.
+			var conn net.Conn
+			retryCount := 30
+			for i := 0; i < retryCount; i++ {
+				conn, err = net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", port), 500*time.Millisecond)
+				if err == nil {
+					_ = conn.Close()
+					break
+				}
+				time.Sleep(500 * time.Millisecond)
+			}
+
+			if err != nil {
+				log.Println("Failed to connect to cloud-sql-proxy. Killing proxy.")
+				_ = proxyCmd.Process.Kill()
+				log.Fatalf("Proxy connection error: %v", err)
+			}
 
 			psqlCommand := fmt.Sprintf("psql -h localhost -U %s -p %d -d %s", userName, port, databaseList)
 
