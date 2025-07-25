@@ -1,3 +1,4 @@
+version: 2
 before:
   hooks:
     - go mod download
@@ -19,71 +20,13 @@ archives:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  version_template: "{{ .Tag }}-next"
 changelog:
   sort: asc
   filters:
     exclude:
       - '^docs:'
       - '^test:'
-metadata:
-notarize:
-gomod:
-github_urls:
-release:
-snapcrafts:
-  -
-dist:
-source:
-project_name:
-kos:
-  -
-signs:
-  -
-git:
-scoops:
-  -
-aurs:
-  -
-report_sizes: false
-publishers:
-  -
-nix:
-  -
-nfpms:
-  -
-blobs:
-  -
-universal_binaries:
-  -
-krews:
-  -
-sboms:
-  -
-chocolateys:
-  -
-gitlab_urls:
-artifactories:
-  -
-gitea_urls:
-force_token: github
-env:
-  -
-version: 2
-dockers:
-  -
-env_files:
-announce:
-uploads:
-  -
-winget:
-  -
-docker_manifests:
-  -
-milestones:
-  -
-upx:
-  -
 brews:
   - repository:
       name: homebrew-cloudsql
