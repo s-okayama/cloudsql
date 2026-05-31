@@ -18,7 +18,7 @@ func doctor() {
 
 	// Find out the postgresSupportVersion from the following link.
 	// https://github.com/google-cloud-sdk-unofficial/google-cloud-sdk/blame/7ffc79beeaa5ec5b900847691f3e047998033acf/lib/googlecloudsdk/generated_clients/apis/sqladmin/v1beta4/sqladmin_v1beta4_messages.py#L1175
-	postgresSupportVersion := "486.0.0"
+	postgresSupportVersion := "569.0.0"
 
 	// Check gcloud sdk
 	gcloudversioncommand := fmt.Sprintf("gcloud version")

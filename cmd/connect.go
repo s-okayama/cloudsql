@@ -178,17 +178,17 @@ func listDatabases(instance string, project string) []string {
 }
 
 func getDatabase(instance string, project string) string {
-	databaseList := listDatabases(instance, project)
+	database := listDatabases(instance, project)
 
 	searcher := func(input string, index int) bool {
-		name := databaseList[index]
+		name := database[index]
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
 		return strings.Contains(name, input)
 	}
 
 	prompt := promptui.Select{
 		Label:    "Select Database",
-		Items:    databaseList,
+		Items:    database,
 		Searcher: searcher,
 		Stdout:   NoBellStdout,
 	}
@@ -236,25 +236,68 @@ func getdbTypeName(instance string, project string) string {
 	return result
 }
 
+func findExistingProxy(connectionName string) int {
+	command := fmt.Sprintf("ps aux | grep cloud-sql-proxy | grep -v grep | grep '%s'", connectionName)
+	out, err := exec.Command("bash", "-c", command).Output()
+	if err != nil || len(out) == 0 {
+		return 0
+	}
+	re := regexp.MustCompile(`--port[= ](\d+)`)
+	match := re.FindStringSubmatch(string(out))
+	if len(match) < 2 {
+		return 0
+	}
+	port, _ := strconv.Atoi(match[1])
+
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", port), 1*time.Second)
+	if err != nil {
+		return 0
+	}
+	conn.Close()
+	return port
+}
+
+func connectInstanceWithProfile(p Profile, port int, debug bool, direct bool) {
+	doConnect(p.Project, p.ConnectionName, p.Instance, p.Database, port, debug, direct)
+}
+
 func connectInstance(port int, noConfig bool, debug bool, direct bool) {
-	var dbTypeName string
-	var sqlInstanceName []string
-	var sqlConnectionName string
-	var userName string
+	project := setProject(noConfig)
+	sqlConnectionName := getInstance(project)
+	sqlInstanceName := strings.Split(sqlConnectionName, ":")
+	database := getDatabase(sqlInstanceName[2], project)
+	doConnect(project, sqlConnectionName, sqlInstanceName[2], database, port, debug, direct)
+}
+
+func doConnect(project, sqlConnectionName, instance, database string, port int, debug bool, direct bool) {
+	if !direct {
+		existingPort := findExistingProxy(sqlConnectionName)
+		if existingPort > 0 {
+			userName := getUser()
+			dbTypeName := getdbTypeName(instance, project)
+			boldGreen := color.New(color.FgGreen, color.Bold)
+			color.Yellow("Already connected to %s on port %d", sqlConnectionName, existingPort)
+			color.Blue("Can connect using:")
+			if strings.Contains(dbTypeName, "POSTGRES") {
+				_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, existingPort, database)
+			}
+			if strings.Contains(dbTypeName, "MYSQL") {
+				var re = regexp.MustCompile("@.*")
+				_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), existingPort, database)
+			}
+			return
+		}
+	}
+
+	port = findAvailablePort(port)
+	dbTypeName := getdbTypeName(instance, project)
+	userName := getUser()
 
 	// color setting
 	green := color.New(color.FgGreen)
 	blue := color.New(color.FgBlue)
 	boldGreen := green.Add(color.Bold)
 	boldBlue := blue.Add(color.Bold)
-
-	// select database
-	project := setProject(noConfig)
-	sqlConnectionName = getInstance(project)
-	sqlInstanceName = strings.Split(sqlConnectionName, ":")
-	databaseList := getDatabase(sqlInstanceName[2], project)
-	dbTypeName = getdbTypeName(sqlInstanceName[2], project)
-	userName = getUser()
 
 	// connect instance
 	if strings.Contains(dbTypeName, "POSTGRES") {
@@ -297,7 +340,7 @@ func connectInstance(port int, noConfig bool, debug bool, direct bool) {
 				log.Fatalf("Proxy connection error: %v", err)
 			}
 
-			psqlCommand := fmt.Sprintf("psql -h localhost -U %s -p %d -d %s", userName, port, databaseList)
+			psqlCommand := fmt.Sprintf("psql -h localhost -U %s -p %d -d %s", userName, port, database)
 
 			psqlCmd := exec.Command("bash", "-c", psqlCommand)
 			psqlCmd.Stdout = os.Stdout
@@ -337,7 +380,7 @@ func connectInstance(port int, noConfig bool, debug bool, direct bool) {
 			}
 
 			color.Blue("Can connect using:")
-			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, databaseList)
+			_, _ = boldGreen.Printf("psql -h localhost -U %s -p %d -d %s\n", userName, port, database)
 		}
 	}
 	if strings.Contains(dbTypeName, "MYSQL") {
@@ -357,7 +400,7 @@ func connectInstance(port int, noConfig bool, debug bool, direct bool) {
 			}
 		}
 
-		port = 3306
+		port = findAvailablePort(3306)
 		cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
 		cmd.Stdout = os.Stdout
 		err := cmd.Start()
@@ -368,8 +411,8 @@ func connectInstance(port int, noConfig bool, debug bool, direct bool) {
 
 		color.Blue("Can connect using:")
 		var re = regexp.MustCompile("@.*")
-		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, databaseList)
+		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, database)
 		// Temporarily commented out when database is selected because the connection is not possible due to permission issues.
-		//_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, databaseList)
+		//_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, database)
 	}
 }
