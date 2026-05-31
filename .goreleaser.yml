@@ -35,5 +35,8 @@ brews:
     directory: Formula
     homepage: https://github.com/s-okayama/cloudsql
     description: cloudsql
+    install: |
+      bin.install "cloudsql"
+      generate_completions_from_executable(bin/"cloudsql", "completion")
     test: |
       system "#{bin}/cloudsql --version"
