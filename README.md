@@ -53,20 +53,23 @@ project-prd
 ```
 
 ## Usage
-- help
+
+### Commands
 ```
-$ cloudsql        
+$ cloudsql
 CloudSQL CLI
 
 Usage:
   cloudsql [command]
 
 Available Commands:
-  completion  Generate the autocompletion script for the specified shell
+  completion  Generate shell completion script
+  config      manage connection profiles
   connect     connect to cloudsql instance
   disconnect  disconnect cloudsql instance
   doctor      troubleshooting
   help        Help about any command
+  info        show cloudsql instance details
   list        list connected cloudsql instance
   version     Print the version number of cloudsql
 
@@ -74,64 +77,87 @@ Flags:
   -h, --help   help for cloudsql
 ```
 
-- connect
+### connect
 ```
-# You can set sub-command "--port" like this. → $ cloudsql connect --port 12345
+# Interactive mode
 $ cloudsql connect
-Use the arrow keys to navigate: ↓ ↑ → ← 
-? Select Project: 
-    project-prd
-  ▸ project-dev
-✔ project-dev
 
-? Select Project:project-dev 
-  ▸ project-dev:asia-northeast1:stg-hoge-db-fecdf019
-    project-dev:asia-northeast1:stg-postgres-0e80e42e
-    project-dev:asia-northeast1:stg-mysql-db-8347a466
-    project-dev:asia-northeast1:stg-metabase-db-3413a639
- ✔ project-dev:asia-northeast1:stg-postgres-db-0e80e42e
+# With port
+$ cloudsql connect --port 12345
 
-? Select Database:
-  ▸ postgres
-    test-db 
-Connecting Instance
-2022/11/06 21:21:45 Cloudsql proxy process is running in background, process_id: 65464
-Can connect using:
-psql -h localhost -U yamada.taro@gmail.com -p 5432 -d postgres
+# Direct mode (opens psql session directly)
+$ cloudsql connect --direct
+
+# With saved profile
+$ cloudsql connect mydb
+$ cloudsql connect --profile mydb
+
+# Debug mode
+$ cloudsql connect --debug
 ```
 
-- disconnect
+If the specified port is already in use, an available port is automatically selected.
+If a proxy for the same instance is already running, the existing connection is reused.
+
+### disconnect
 ```
-$ cloudsql disconnect          
-Use the arrow keys to navigate: ↓ ↑ → ← 
-? Select Instance to disconnect: 
-  ▸ project-dev:asia-northeast1:stg-postgres-0e80e42e=tcp:5432
+# Select instance to disconnect
+$ cloudsql disconnect
+
+# Disconnect all instances
+$ cloudsql disconnect --all
 ```
 
-- doctor
+### info
+```
+# Interactive mode
+$ cloudsql info
+
+# With saved profile
+$ cloudsql info --profile mydb
+```
+
+Displays instance details: region, DB version, tier, state, IPs, storage, backup, maintenance window, etc.
+
+### config (Connection Profiles)
+Save frequently used connections to skip interactive selection.
+```
+# Save a profile (interactive selection)
+$ cloudsql config save mydb
+
+# List saved profiles
+$ cloudsql config list
+
+# Delete a profile
+$ cloudsql config delete mydb
+```
+
+Profiles are stored in `~/.cloudsql/profiles.json`.
+
+### Shell Completion
+```
+# Zsh
+$ source <(cloudsql completion zsh)
+
+# Permanent (Zsh)
+$ cloudsql completion zsh > "${fpath[1]}/_cloudsql"
+
+# Bash
+$ source <(cloudsql completion bash)
+
+# Fish
+$ cloudsql completion fish | source
+```
+
+### doctor
 ```
 $ cloudsql doctor
-cloudsql % go run cloudsql.go doctor
-gcloud version: Google Cloud SDK 420.0.0
-Authenticated user account: xxxxx@example.com
-cloud-sql-proxy version: cloud-sql-proxy version 2.0.0
-psql version: psql (PostgreSQL) 15.2
-mysql version: mysql  Ver 8.0.32 for macos12.6 on arm64 (Homebrew)
+Google Cloud SDK Version: 569.0.0
+gcloud version: 569.0.0
+Authenticated user account: user@example.com
+cloud-sql-proxy version: cloud-sql-proxy version 2.14.3
+psql version: psql (PostgreSQL) 16.3
+mysql version: mysql  Ver 9.0.1 for macos14.4 on arm64 (Homebrew)
 config file: ok
 Your system is All Green!
 ```
-
-## ToDo
-- [x] Disable sound for Mac  
-→ Add nobell.go
-- [x] Add search feature  
-→ search by /
-- [x] Add Select Database feature  
-→ Add getDatabase & get listDatabase func
-- [x] Add proxy & connect mode
-- [x] Add Doctor feature(check cloud-sql-proxy & postgres & mysql)  
-→ Add doctor command
-- [x] brew install
-- [x] Support PostgreSQL cloud-sql-proxy version 2.0.0 
-- [x] Support MySQL cloud-sql-proxy version 2.0.0
-- [x] Display error when Port is already in use

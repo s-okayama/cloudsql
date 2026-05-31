@@ -2,48 +2,48 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/fatih/color"
+	"net"
 	"os"
 	"os/exec"
-	"strconv"
-	"strings"
+
+	"github.com/fatih/color"
 )
 
 func checkVersionCloudSqlProxy() {
-	red := color.New(color.FgRed)
-	boldRed := red.Add(color.Bold)
-	green := color.New(color.FgGreen)
-	boldGreen := green.Add(color.Bold)
-
-	// Check Version cloud-sql-proxy
 	cloudsqlproxyversion := exec.Command("cloud-sql-proxy", "--version")
 	_, err := cloudsqlproxyversion.Output()
 
 	if err != nil {
-		_, _ = boldRed.Println("Error: %s", err)
+		boldRed := color.New(color.FgRed, color.Bold)
+		boldGreen := color.New(color.FgGreen, color.Bold)
+		_, _ = boldRed.Printf("Error: %s\n", err)
 		_, _ = boldRed.Println("Please upgrade your cloud-sql-proxy version to 2 or higher")
 		_, _ = boldGreen.Println("Install URL:https://cloud.google.com/sql/docs/postgres/sql-proxy?hl=ja#install")
 		os.Exit(0)
 	}
 }
 
-func checkPort(port int) {
-	red := color.New(color.FgRed)
-	boldRed := red.Add(color.Bold)
-	green := color.New(color.FgGreen)
-	boldGreen := green.Add(color.Bold)
-
-	//command := fmt.Sprintf("lsof -i tcp:%s", port)
-	command := fmt.Sprintf("lsof -i tcp:" + strconv.Itoa(port))
-	processlist := exec.Command("bash", "-c", command)
-	output, _ := processlist.Output()
-	line := strings.TrimSuffix(string(output), "\n")
-	list := strings.Split(line, "\n")
-	if list[0] != "" {
-		_, _ = boldRed.Printf("Port \"%d\" already in use\n", port)
-		_, _ = boldRed.Printf(string(output))
-		_, _ = boldGreen.Printf("Can connect using:\n")
-		_, _ = boldGreen.Printf("cloudsql connect --port 12345\n")
-		os.Exit(0)
+func findAvailablePort(port int) int {
+	ln, err := net.Listen("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
+	if err == nil {
+		ln.Close()
+		return port
 	}
+
+	yellow := color.New(color.FgYellow)
+	boldYellow := yellow.Add(color.Bold)
+	_, _ = boldYellow.Printf("Port %d is in use, searching for available port...\n", port)
+
+	for p := port + 1; p <= port+100; p++ {
+		ln, err = net.Listen("tcp4", fmt.Sprintf("127.0.0.1:%d", p))
+		if err == nil {
+			ln.Close()
+			_, _ = boldYellow.Printf("Using port %d instead\n", p)
+			return p
+		}
+	}
+
+	fmt.Printf("No available port found in range %d-%d\n", port, port+100)
+	os.Exit(1)
+	return 0
 }
