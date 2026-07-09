@@ -220,7 +220,7 @@ func getUser() string {
 func getdbTypeName(instance string, project string) string {
 	var result string
 
-	getdbtype := fmt.Sprintf("gcloud sql instances describe " + instance + " --project=" + project + " --format='value(databaseVersion)'")
+	getdbtype := fmt.Sprintf("gcloud sql instances describe %s --project=%s --format='value(databaseVersion)'", instance, project)
 	dbtype := exec.Command("bash", "-c", getdbtype)
 	getdbtypeOut, err1 := dbtype.Output()
 
