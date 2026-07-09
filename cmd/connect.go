@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"google.golang.org/api/sqladmin/v1"
 	"log"
 	"net"
 	"os"
@@ -14,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"google.golang.org/api/sqladmin/v1"
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
@@ -257,19 +258,19 @@ func findExistingProxy(connectionName string) int {
 	return port
 }
 
-func connectInstanceWithProfile(p Profile, port int, debug bool, direct bool) {
-	doConnect(p.Project, p.ConnectionName, p.Instance, p.Database, port, debug, direct)
+func connectInstanceWithProfile(p Profile, port int, debug bool, direct bool, noIam bool) {
+	doConnect(p.Project, p.ConnectionName, p.Instance, p.Database, port, debug, direct, noIam)
 }
 
-func connectInstance(port int, noConfig bool, debug bool, direct bool) {
+func connectInstance(port int, noConfig bool, debug bool, direct bool, noIam bool) {
 	project := setProject(noConfig)
 	sqlConnectionName := getInstance(project)
 	sqlInstanceName := strings.Split(sqlConnectionName, ":")
 	database := getDatabase(sqlInstanceName[2], project)
-	doConnect(project, sqlConnectionName, sqlInstanceName[2], database, port, debug, direct)
+	doConnect(project, sqlConnectionName, sqlInstanceName[2], database, port, debug, direct, noIam)
 }
 
-func doConnect(project, sqlConnectionName, instance, database string, port int, debug bool, direct bool) {
+func doConnect(project, sqlConnectionName, instance, database string, port int, debug bool, direct bool, noIam bool) {
 	if !direct {
 		existingPort := findExistingProxy(sqlConnectionName)
 		if existingPort > 0 {
@@ -289,9 +290,17 @@ func doConnect(project, sqlConnectionName, instance, database string, port int, 
 		}
 	}
 
-	port = findAvailablePort(port)
 	dbTypeName := getdbTypeName(instance, project)
+	if port == 5432 && strings.Contains(dbTypeName, "MYSQL") {
+		port = 3306
+	}
+	port = findAvailablePort(port)
 	userName := getUser()
+
+	iamFlag := " --auto-iam-authn"
+	if noIam {
+		iamFlag = ""
+	}
 
 	// color setting
 	green := color.New(color.FgGreen)
@@ -303,9 +312,9 @@ func doConnect(project, sqlConnectionName, instance, database string, port int, 
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		if direct {
 			var err error
-			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --private-ip --port=%d", sqlConnectionName, port)
+			command := fmt.Sprintf("cloud-sql-proxy %s%s --private-ip --port=%d", sqlConnectionName, iamFlag, port)
 			if debug {
-				command = fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
+				command = fmt.Sprintf("cloud-sql-proxy %s%s --debug --private-ip --port=%d", sqlConnectionName, iamFlag, port)
 				color.Blue("[Debug Mode]\nThe following commands are executed in foreground.\n")
 				_, _ = boldBlue.Printf("%s\n", command)
 			}
@@ -357,9 +366,9 @@ func doConnect(project, sqlConnectionName, instance, database string, port int, 
 				log.Fatal(err)
 			}
 		} else {
-			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --private-ip --quiet --port=%d", sqlConnectionName, port)
+			command := fmt.Sprintf("cloud-sql-proxy %s%s --private-ip --quiet --port=%d", sqlConnectionName, iamFlag, port)
 			if debug {
-				command = fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --debug --private-ip --port=%d", sqlConnectionName, port)
+				command = fmt.Sprintf("cloud-sql-proxy %s%s --debug --private-ip --port=%d", sqlConnectionName, iamFlag, port)
 				color.Blue("[Debug Mode]\nThe following commands are executed in foreground.\n")
 				_, _ = boldBlue.Printf("%s\n", command)
 				debug := exec.Command("bash", "-c", command)
@@ -370,7 +379,12 @@ func doConnect(project, sqlConnectionName, instance, database string, port int, 
 					log.Fatal(err)
 				}
 			} else {
-				cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
+				proxyArgs := []string{sqlConnectionName}
+				if !noIam {
+					proxyArgs = append(proxyArgs, "--auto-iam-authn")
+				}
+				proxyArgs = append(proxyArgs, "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
+				cmd := exec.Command("cloud-sql-proxy", proxyArgs...)
 				cmd.Stdout = os.Stdout
 				err := cmd.Start()
 				if err != nil {
@@ -385,7 +399,7 @@ func doConnect(project, sqlConnectionName, instance, database string, port int, 
 	}
 	if strings.Contains(dbTypeName, "MYSQL") {
 		if debug {
-			command := fmt.Sprintf("cloud-sql-proxy %s --auto-iam-authn --private-ip --debug --port=%d", sqlConnectionName, port)
+			command := fmt.Sprintf("cloud-sql-proxy %s%s --private-ip --debug --port=%d", sqlConnectionName, iamFlag, port)
 			color.Blue("[Debug Mode]\nThe following commands are executed in foreground.\n")
 			_, _ = boldBlue.Printf("%s\n", command)
 			color.Green("Can connect using:\n")
@@ -400,8 +414,13 @@ func doConnect(project, sqlConnectionName, instance, database string, port int, 
 			}
 		}
 
-		port = findAvailablePort(3306)
-		cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
+		port = findAvailablePort(port)
+		mysqlProxyArgs := []string{sqlConnectionName}
+		if !noIam {
+			mysqlProxyArgs = append(mysqlProxyArgs, "--auto-iam-authn")
+		}
+		mysqlProxyArgs = append(mysqlProxyArgs, "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
+		cmd := exec.Command("cloud-sql-proxy", mysqlProxyArgs...)
 		cmd.Stdout = os.Stdout
 		err := cmd.Start()
 		if err != nil {
