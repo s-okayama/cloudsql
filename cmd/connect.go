@@ -400,7 +400,7 @@ func doConnect(project, sqlConnectionName, instance, database string, port int, 
 			}
 		}
 
-		port = findAvailablePort(3306)
+		port = findAvailablePort(port)
 		cmd := exec.Command("cloud-sql-proxy", sqlConnectionName, "--auto-iam-authn", "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
 		cmd.Stdout = os.Stdout
 		err := cmd.Start()
