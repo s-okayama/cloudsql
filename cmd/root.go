@@ -40,6 +40,10 @@ func init() {
 			if err != nil {
 				log.Fatalf("Error getting direct: %v", err)
 			}
+			noIam, err := cmd.Flags().GetBool("no-iam")
+			if err != nil {
+				log.Fatalf("Error getting no-iam: %v", err)
+			}
 
 			profileName, _ := cmd.Flags().GetString("profile")
 			if profileName == "" && len(args) > 0 {
@@ -51,13 +55,13 @@ func init() {
 				if port == 5432 {
 					port = p.Port
 				}
-				connectInstanceWithProfile(p, port, debug, direct)
+				connectInstanceWithProfile(p, port, debug, direct, noIam)
 			} else {
 				noConfig, err := cmd.Flags().GetBool("no-config")
 				if err != nil {
 					log.Fatalf("Error getting no-config: %v", err)
 				}
-				connectInstance(port, noConfig, debug, direct)
+				connectInstance(port, noConfig, debug, direct, noIam)
 			}
 		},
 	}
@@ -161,6 +165,7 @@ func init() {
 	connectCmd.Flags().BoolP("no-config", "", false, "load config from gcloud")
 	connectCmd.Flags().BoolP("debug", "", false, "for troubleshooting. you can get cloud-sql-proxy log")
 	connectCmd.Flags().BoolP("direct", "", false, "connect to cloudsql instance directly")
+	connectCmd.Flags().BoolP("no-iam", "", false, "disable auto IAM authentication for cloud-sql-proxy")
 	connectCmd.Flags().StringP("profile", "p", "", "use saved profile")
 	disconnectCmd.Flags().BoolP("all", "a", false, "disconnect all cloudsql instance")
 }
