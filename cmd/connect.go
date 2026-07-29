@@ -313,7 +313,7 @@ func printAutoDisconnect(timeout time.Duration) {
 
 func doConnect(project, sqlConnectionName, instance, database string, port int, debug bool, direct bool, noIam bool, timeout time.Duration, unixSocket string) {
 	if unixSocket != "" {
-		doConnectUnixSocket(project, sqlConnectionName, instance, database, debug, noIam, unixSocket)
+		doConnectUnixSocket(project, sqlConnectionName, instance, database, debug, noIam, timeout, unixSocket)
 	} else {
 		doConnectTCP(project, sqlConnectionName, instance, database, port, debug, direct, noIam, timeout)
 	}
@@ -477,7 +477,7 @@ func doConnectTCP(project, sqlConnectionName, instance, database string, port in
 	}
 }
 
-func doConnectUnixSocket(project, sqlConnectionName, instance, database string, debug bool, noIam bool, unixSocket string) {
+func doConnectUnixSocket(project, sqlConnectionName, instance, database string, debug bool, noIam bool, timeout time.Duration, unixSocket string) {
 	dbTypeName := getdbTypeName(instance, project)
 	userName := getUser()
 
@@ -540,14 +540,14 @@ func doConnectUnixSocket(project, sqlConnectionName, instance, database string, 
 		return
 	}
 
-	command := fmt.Sprintf("cloud-sql-proxy %s%s --private-ip --quiet", instanceArg, iamFlag)
-	cmd := exec.Command("bash", "-c", command)
-	cmd.Stdout = os.Stdout
-	err := cmd.Start()
-	if err != nil {
-		log.Fatal(err)
+	proxyArgs := []string{fmt.Sprintf("%s?unix-socket-path=%s", sqlConnectionName, socketPath)}
+	if !noIam {
+		proxyArgs = append(proxyArgs, "--auto-iam-authn")
 	}
+	proxyArgs = append(proxyArgs, "--private-ip", "--quiet")
+	cmd := startProxyBackground(proxyArgs, timeout)
 	log.Printf("Cloudsql proxy process is running in background (unix socket), process_id: %d\n", cmd.Process.Pid)
+	printAutoDisconnect(timeout)
 
 	color.Blue("Can connect using:")
 	if strings.Contains(dbTypeName, "POSTGRES") {
