@@ -258,19 +258,46 @@ func findExistingProxy(connectionName string) int {
 	return port
 }
 
-func connectInstanceWithProfile(p Profile, port int, debug bool, direct bool, noIam bool) {
-	doConnect(p.Project, p.ConnectionName, p.Instance, p.Database, port, debug, direct, noIam)
+func connectInstanceWithProfile(p Profile, port int, debug bool, direct bool, noIam bool, timeout time.Duration) {
+	doConnect(p.Project, p.ConnectionName, p.Instance, p.Database, port, debug, direct, noIam, timeout)
 }
 
-func connectInstance(port int, noConfig bool, debug bool, direct bool, noIam bool) {
+func connectInstance(port int, noConfig bool, debug bool, direct bool, noIam bool, timeout time.Duration) {
 	project := setProject(noConfig)
 	sqlConnectionName := getInstance(project)
 	sqlInstanceName := strings.Split(sqlConnectionName, ":")
 	database := getDatabase(sqlInstanceName[2], project)
-	doConnect(project, sqlConnectionName, sqlInstanceName[2], database, port, debug, direct, noIam)
+	doConnect(project, sqlConnectionName, sqlInstanceName[2], database, port, debug, direct, noIam, timeout)
 }
 
-func doConnect(project, sqlConnectionName, instance, database string, port int, debug bool, direct bool, noIam bool) {
+// timeout > 0 のときは supervise サブコマンド経由で起動し、ttl 経過後に
+// proxy を自動停止させる。0 なら従来どおり proxy を直接常駐させる。
+func startProxyBackground(proxyArgs []string, timeout time.Duration) *exec.Cmd {
+	var cmd *exec.Cmd
+	if timeout > 0 {
+		self, err := os.Executable()
+		if err != nil {
+			log.Fatal(err)
+		}
+		args := append([]string{"supervise", "--ttl", timeout.String(), "--"}, proxyArgs...)
+		cmd = exec.Command(self, args...)
+	} else {
+		cmd = exec.Command("cloud-sql-proxy", proxyArgs...)
+	}
+	cmd.Stdout = os.Stdout
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+	return cmd
+}
+
+func printAutoDisconnect(timeout time.Duration) {
+	if timeout > 0 {
+		color.Yellow("This connection will be automatically disconnected at %s (--timeout %s, set 0 to disable)", time.Now().Add(timeout).Format("15:04"), timeout)
+	}
+}
+
+func doConnect(project, sqlConnectionName, instance, database string, port int, debug bool, direct bool, noIam bool, timeout time.Duration) {
 	if !direct {
 		existingPort := findExistingProxy(sqlConnectionName)
 		if existingPort > 0 {
@@ -384,13 +411,9 @@ func doConnect(project, sqlConnectionName, instance, database string, port int, 
 					proxyArgs = append(proxyArgs, "--auto-iam-authn")
 				}
 				proxyArgs = append(proxyArgs, "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
-				cmd := exec.Command("cloud-sql-proxy", proxyArgs...)
-				cmd.Stdout = os.Stdout
-				err := cmd.Start()
-				if err != nil {
-					log.Fatal(err)
-				}
+				cmd := startProxyBackground(proxyArgs, timeout)
 				log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
+				printAutoDisconnect(timeout)
 			}
 
 			color.Blue("Can connect using:")
@@ -420,13 +443,9 @@ func doConnect(project, sqlConnectionName, instance, database string, port int, 
 			mysqlProxyArgs = append(mysqlProxyArgs, "--auto-iam-authn")
 		}
 		mysqlProxyArgs = append(mysqlProxyArgs, "--private-ip", "--quiet", "--port="+strconv.Itoa(port))
-		cmd := exec.Command("cloud-sql-proxy", mysqlProxyArgs...)
-		cmd.Stdout = os.Stdout
-		err := cmd.Start()
-		if err != nil {
-			log.Fatal(err)
-		}
+		cmd := startProxyBackground(mysqlProxyArgs, timeout)
 		log.Printf("Cloudsql proxy process is running in background, process_id: %d\n", cmd.Process.Pid)
+		printAutoDisconnect(timeout)
 
 		color.Blue("Can connect using:")
 		var re = regexp.MustCompile("@.*")

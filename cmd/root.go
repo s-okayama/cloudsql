@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -44,6 +45,10 @@ func init() {
 			if err != nil {
 				log.Fatalf("Error getting no-iam: %v", err)
 			}
+			timeout, err := cmd.Flags().GetDuration("timeout")
+			if err != nil {
+				log.Fatalf("Error getting timeout: %v", err)
+			}
 
 			profileName, _ := cmd.Flags().GetString("profile")
 			if profileName == "" && len(args) > 0 {
@@ -55,13 +60,13 @@ func init() {
 				if port == 5432 {
 					port = p.Port
 				}
-				connectInstanceWithProfile(p, port, debug, direct, noIam)
+				connectInstanceWithProfile(p, port, debug, direct, noIam, timeout)
 			} else {
 				noConfig, err := cmd.Flags().GetBool("no-config")
 				if err != nil {
 					log.Fatalf("Error getting no-config: %v", err)
 				}
-				connectInstance(port, noConfig, debug, direct, noIam)
+				connectInstance(port, noConfig, debug, direct, noIam, timeout)
 			}
 		},
 	}
@@ -157,7 +162,7 @@ func init() {
 	configSaveCmd.Flags().BoolP("no-config", "", false, "load config from gcloud")
 	configCmd.AddCommand(configSaveCmd, configListCmd, configDeleteCmd)
 
-	rootCmd.AddCommand(disconnectCmd, connectCmd, listCmd, versionCmd, doctorCmd, completionCmd, infoCmd, configCmd)
+	rootCmd.AddCommand(disconnectCmd, connectCmd, listCmd, versionCmd, doctorCmd, completionCmd, infoCmd, configCmd, superviseCmd)
 	infoCmd.Flags().BoolP("no-config", "", false, "load config from gcloud")
 	infoCmd.Flags().StringP("profile", "p", "", "use saved profile")
 	checkVersionCloudSqlProxy()
@@ -167,6 +172,8 @@ func init() {
 	connectCmd.Flags().BoolP("direct", "", false, "connect to cloudsql instance directly")
 	connectCmd.Flags().BoolP("no-iam", "", false, "disable auto IAM authentication for cloud-sql-proxy")
 	connectCmd.Flags().StringP("profile", "p", "", "use saved profile")
+	connectCmd.Flags().Duration("timeout", time.Hour, "automatically disconnect after this duration (0 to disable)")
+	superviseCmd.Flags().Duration("ttl", time.Hour, "kill the proxy after this duration")
 	disconnectCmd.Flags().BoolP("all", "a", false, "disconnect all cloudsql instance")
 }
 
