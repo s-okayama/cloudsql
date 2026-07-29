@@ -238,6 +238,10 @@ func getdbTypeName(instance string, project string) string {
 }
 
 func defaultUnixSocketDir() string {
+	// NFS ホームでは unix socket が機能しないため、Linux では XDG_RUNTIME_DIR を優先する
+	if dir := os.Getenv("XDG_RUNTIME_DIR"); dir != "" {
+		return filepath.Join(dir, "cloudsql")
+	}
 	return filepath.Join(os.Getenv("HOME"), ".cloudsql", "sockets")
 }
 
