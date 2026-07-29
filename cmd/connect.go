@@ -237,6 +237,10 @@ func getdbTypeName(instance string, project string) string {
 	return result
 }
 
+func defaultUnixSocketDir() string {
+	return filepath.Join(os.Getenv("HOME"), ".cloudsql", "sockets")
+}
+
 func findExistingProxyProcess(connectionName string) bool {
 	command := fmt.Sprintf("ps aux | grep cloud-sql-proxy | grep -v grep | grep '%s'", connectionName)
 	out, err := exec.Command("bash", "-c", command).Output()

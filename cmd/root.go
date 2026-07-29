@@ -49,9 +49,16 @@ func init() {
 			if err != nil {
 				log.Fatalf("Error getting timeout: %v", err)
 			}
-			unixSocket, err := cmd.Flags().GetString("unix-socket")
+			useUnixSocket, err := cmd.Flags().GetBool("unix-socket")
 			if err != nil {
 				log.Fatalf("Error getting unix-socket: %v", err)
+			}
+			unixSocket, err := cmd.Flags().GetString("unix-socket-dir")
+			if err != nil {
+				log.Fatalf("Error getting unix-socket-dir: %v", err)
+			}
+			if useUnixSocket && unixSocket == "" {
+				unixSocket = defaultUnixSocketDir()
 			}
 
 			profileName, _ := cmd.Flags().GetString("profile")
@@ -175,7 +182,8 @@ func init() {
 	connectCmd.Flags().BoolP("debug", "", false, "for troubleshooting. you can get cloud-sql-proxy log")
 	connectCmd.Flags().BoolP("direct", "", false, "connect to cloudsql instance directly")
 	connectCmd.Flags().BoolP("no-iam", "", false, "disable auto IAM authentication for cloud-sql-proxy")
-	connectCmd.Flags().StringP("unix-socket", "u", "", "use unix socket instead of TCP port (e.g. /tmp/cloudsql)")
+	connectCmd.Flags().BoolP("unix-socket", "u", false, "use unix socket instead of TCP port (socket dir: ~/.cloudsql/sockets)")
+	connectCmd.Flags().StringP("unix-socket-dir", "", "", "unix socket directory (implies --unix-socket)")
 	connectCmd.Flags().StringP("profile", "p", "", "use saved profile")
 	connectCmd.Flags().Duration("timeout", time.Hour, "automatically disconnect after this duration (0 to disable)")
 	superviseCmd.Flags().Duration("ttl", time.Hour, "kill the proxy after this duration")
