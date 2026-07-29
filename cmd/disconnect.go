@@ -5,12 +5,13 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/manifoldco/promptui"
 )
 
-func getPort() string {
+func selectInstanceEntry() string {
 	str := listInstance()
 
 	prompt := promptui.Select{
@@ -28,9 +29,15 @@ func getPort() string {
 	}
 
 	fmt.Printf("You choose %q\n", result)
-	res1 := strings.Split(result, "=")
-	port := res1[len(res1)-1]
-	return port
+	return result
+}
+
+func unixSocketPathFromEntry(entry string) string {
+	m := regexp.MustCompile(`unix-socket-path=([^' ]+)`).FindStringSubmatch(entry)
+	if m == nil {
+		return ""
+	}
+	return m[1]
 }
 
 func disconnectInstance(all bool) {
@@ -44,15 +51,29 @@ func disconnectInstance(all bool) {
 			return
 		}
 		log.Println("All cloud-sql-proxy instances disconnected.")
-	} else {
-		port := getPort()
-		command := fmt.Sprintf("lsof -i tcp:%s | grep LISTEN | awk '{print $2}' | xargs kill -9", port)
-		cmd := exec.Command("bash", "-c", command)
-		cmd.Stdout = os.Stdout
-		err := cmd.Run()
-		if err != nil {
+		return
+	}
+
+	entry := selectInstanceEntry()
+	if socketPath := unixSocketPathFromEntry(entry); socketPath != "" {
+		// unix socket 接続はポートを持たないため、socket パスでプロセスを特定して kill する
+		command := fmt.Sprintf("ps aux | grep cloud-sql-proxy | grep -v grep | grep '%s' | awk '{print $2}' | xargs kill -9", socketPath)
+		if err := exec.Command("bash", "-c", command).Run(); err != nil {
 			log.Fatal(err)
 		}
+		_ = os.Remove(socketPath)
 		log.Printf("Instance disconnected")
+		return
 	}
+
+	res1 := strings.Split(entry, "=")
+	port := res1[len(res1)-1]
+	command := fmt.Sprintf("lsof -i tcp:%s | grep LISTEN | awk '{print $2}' | xargs kill -9", port)
+	cmd := exec.Command("bash", "-c", command)
+	cmd.Stdout = os.Stdout
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Instance disconnected")
 }
