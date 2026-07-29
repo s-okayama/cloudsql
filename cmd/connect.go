@@ -476,8 +476,12 @@ func doConnectUnixSocket(project, sqlConnectionName, instance, database string, 
 	boldGreen := color.New(color.FgGreen, color.Bold)
 	boldBlue := color.New(color.FgBlue, color.Bold)
 
-	if err := os.MkdirAll(unixSocket, 0755); err != nil {
+	// 0700 で他ユーザーからの socket 接続を OS レベルで遮断する（--auto-iam-authn 前提のため必須）
+	if err := os.MkdirAll(unixSocket, 0700); err != nil {
 		log.Fatalf("Failed to create unix socket directory %s: %v", unixSocket, err)
+	}
+	if err := os.Chmod(unixSocket, 0700); err != nil {
+		log.Fatalf("Failed to set permissions on unix socket directory %s: %v", unixSocket, err)
 	}
 
 	sanitizedName := strings.ReplaceAll(sqlConnectionName, ":", "_")
