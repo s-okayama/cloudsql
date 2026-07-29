@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"net"
@@ -245,15 +246,24 @@ func defaultUnixSocketDir() string {
 	return filepath.Join(os.Getenv("HOME"), ".cloudsql", "sockets")
 }
 
+// unix socket のパスには上限（macOS 103バイト）があり、接続名をそのまま使うと
+// 超えるため「インスタンス名 + 接続名ハッシュ8文字」に短縮する。ハッシュは
+// 別プロジェクトの同名インスタンスとの衝突対策。
+func shortSocketName(connectionName string) string {
+	parts := strings.Split(connectionName, ":")
+	instance := parts[len(parts)-1]
+	sum := sha256.Sum256([]byte(connectionName))
+	return fmt.Sprintf("%s-%x", instance, sum[:4])
+}
+
 // psql は -h <dir> に対し <dir>/.s.PGSQL.<port> しか探さない（ファイル名は libpq に
 // ハードコード）ため、Postgres はインスタンスごとのディレクトリを掘って規約名で作る。
 // MySQL は --socket=<file> で任意パスを渡せるのでフラットなファイルのまま。
 func unixSocketPathFor(dbTypeName, baseDir, connectionName string) string {
-	sanitizedName := strings.ReplaceAll(connectionName, ":", "_")
 	if strings.Contains(dbTypeName, "POSTGRES") {
-		return filepath.Join(baseDir, sanitizedName, ".s.PGSQL.5432")
+		return filepath.Join(baseDir, shortSocketName(connectionName), ".s.PGSQL.5432")
 	}
-	return filepath.Join(baseDir, sanitizedName)
+	return filepath.Join(baseDir, shortSocketName(connectionName))
 }
 
 func findExistingProxyProcess(connectionName string) bool {
@@ -504,6 +514,10 @@ func doConnectUnixSocket(project, sqlConnectionName, instance, database string, 
 	}
 
 	socketPath := unixSocketPathFor(dbTypeName, unixSocket, sqlConnectionName)
+	// sun_path の上限は macOS 104 / Linux 108 バイト（NUL 込み）。超えると bind も psql も失敗する
+	if len(socketPath) > 103 {
+		log.Fatalf("Unix socket path is too long (%d bytes, max 103): %s\nUse --unix-socket-dir with a shorter path.", len(socketPath), socketPath)
+	}
 	if strings.Contains(dbTypeName, "POSTGRES") {
 		if err := os.MkdirAll(filepath.Dir(socketPath), 0700); err != nil {
 			log.Fatalf("Failed to create instance socket directory %s: %v", filepath.Dir(socketPath), err)

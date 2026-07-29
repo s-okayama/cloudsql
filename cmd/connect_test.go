@@ -13,7 +13,7 @@ func TestFindExistingProxy_NoProxy(t *testing.T) {
 
 func TestUnixSocketPathFor_Postgres(t *testing.T) {
 	got := unixSocketPathFor("POSTGRES_15", "/base", "proj:asia:inst")
-	want := "/base/proj_asia_inst/.s.PGSQL.5432"
+	want := "/base/inst-5d2b996a/.s.PGSQL.5432"
 	if got != want {
 		t.Errorf("expected %s, got %s", want, got)
 	}
@@ -21,9 +21,27 @@ func TestUnixSocketPathFor_Postgres(t *testing.T) {
 
 func TestUnixSocketPathFor_MySQL(t *testing.T) {
 	got := unixSocketPathFor("MYSQL_8_0", "/base", "proj:asia:inst")
-	want := "/base/proj_asia_inst"
+	want := "/base/inst-5d2b996a"
 	if got != want {
 		t.Errorf("expected %s, got %s", want, got)
+	}
+}
+
+func TestUnixSocketPathFor_StaysUnderSunPathLimit(t *testing.T) {
+	// 実在した115バイト超過ケース。短縮後は macOS の上限 103 バイトに収まること
+	got := unixSocketPathFor("POSTGRES_15",
+		"/Users/kota.tomooka/.cloudsql/sockets",
+		"newspicks-expert-dev:asia-northeast1:dev-pg-newspicks-expert-db")
+	if len(got) > 103 {
+		t.Errorf("socket path exceeds sun_path limit: %d bytes: %s", len(got), got)
+	}
+}
+
+func TestShortSocketName_DifferentProjectsSameInstance(t *testing.T) {
+	a := shortSocketName("proj-dev:asia:db")
+	b := shortSocketName("proj-prod:asia:db")
+	if a == b {
+		t.Errorf("expected different names for different projects, both got %s", a)
 	}
 }
 
