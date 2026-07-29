@@ -21,6 +21,11 @@ func TestUnixSocketPathFromEntry(t *testing.T) {
 			want:  "/run/user/1000/cloudsql/proj_asia-northeast1_inst",
 		},
 		{
+			name:  "postgres entry with .s.PGSQL.5432 convention",
+			entry: "proj:asia-northeast1:inst?unix-socket-path=/Users/me/.cloudsql/sockets/proj_asia-northeast1_inst/.s.PGSQL.5432 --auto-iam-authn --quiet",
+			want:  "/Users/me/.cloudsql/sockets/proj_asia-northeast1_inst/.s.PGSQL.5432",
+		},
+		{
 			name:  "tcp entry has no socket path",
 			entry: "proj:asia-northeast1:inst --auto-iam-authn --private-ip --quiet --port=5432",
 			want:  "",

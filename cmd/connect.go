@@ -245,6 +245,17 @@ func defaultUnixSocketDir() string {
 	return filepath.Join(os.Getenv("HOME"), ".cloudsql", "sockets")
 }
 
+// psql は -h <dir> に対し <dir>/.s.PGSQL.<port> しか探さない（ファイル名は libpq に
+// ハードコード）ため、Postgres はインスタンスごとのディレクトリを掘って規約名で作る。
+// MySQL は --socket=<file> で任意パスを渡せるのでフラットなファイルのまま。
+func unixSocketPathFor(dbTypeName, baseDir, connectionName string) string {
+	sanitizedName := strings.ReplaceAll(connectionName, ":", "_")
+	if strings.Contains(dbTypeName, "POSTGRES") {
+		return filepath.Join(baseDir, sanitizedName, ".s.PGSQL.5432")
+	}
+	return filepath.Join(baseDir, sanitizedName)
+}
+
 func findExistingProxyProcess(connectionName string) bool {
 	command := fmt.Sprintf("ps aux | grep cloud-sql-proxy | grep -v grep | grep '%s'", connectionName)
 	out, err := exec.Command("bash", "-c", command).Output()
@@ -492,8 +503,12 @@ func doConnectUnixSocket(project, sqlConnectionName, instance, database string, 
 		log.Fatalf("Failed to set permissions on unix socket directory %s: %v", unixSocket, err)
 	}
 
-	sanitizedName := strings.ReplaceAll(sqlConnectionName, ":", "_")
-	socketPath := filepath.Join(unixSocket, sanitizedName)
+	socketPath := unixSocketPathFor(dbTypeName, unixSocket, sqlConnectionName)
+	if strings.Contains(dbTypeName, "POSTGRES") {
+		if err := os.MkdirAll(filepath.Dir(socketPath), 0700); err != nil {
+			log.Fatalf("Failed to create instance socket directory %s: %v", filepath.Dir(socketPath), err)
+		}
+	}
 
 	if _, err := os.Stat(socketPath); err == nil {
 		if findExistingProxyProcess(sqlConnectionName) {
@@ -524,7 +539,7 @@ func doConnectUnixSocket(project, sqlConnectionName, instance, database string, 
 		_, _ = boldBlue.Printf("%s\n", command)
 		color.Blue("Can connect using:")
 		if strings.Contains(dbTypeName, "POSTGRES") {
-			_, _ = boldGreen.Printf("psql -h %s -U %s -d %s\n", unixSocket, userName, database)
+			_, _ = boldGreen.Printf("psql -h %s -U %s -d %s\n", filepath.Dir(socketPath), userName, database)
 		}
 		if strings.Contains(dbTypeName, "MYSQL") {
 			var re = regexp.MustCompile("@.*")

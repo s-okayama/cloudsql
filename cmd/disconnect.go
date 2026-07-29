@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -62,6 +63,10 @@ func disconnectInstance(all bool) {
 			log.Fatal(err)
 		}
 		_ = os.Remove(socketPath)
+		if filepath.Base(socketPath) == ".s.PGSQL.5432" {
+			// Postgres はインスタンスごとのディレクトリを掘っているので空になった器も消す
+			_ = os.Remove(filepath.Dir(socketPath))
+		}
 		log.Printf("Instance disconnected")
 		return
 	}
