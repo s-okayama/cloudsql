@@ -49,6 +49,10 @@ func init() {
 			if err != nil {
 				log.Fatalf("Error getting timeout: %v", err)
 			}
+			unixSocket, err := cmd.Flags().GetString("unix-socket")
+			if err != nil {
+				log.Fatalf("Error getting unix-socket: %v", err)
+			}
 
 			profileName, _ := cmd.Flags().GetString("profile")
 			if profileName == "" && len(args) > 0 {
@@ -60,13 +64,13 @@ func init() {
 				if port == 5432 {
 					port = p.Port
 				}
-				connectInstanceWithProfile(p, port, debug, direct, noIam, timeout)
+				connectInstanceWithProfile(p, port, debug, direct, noIam, timeout, unixSocket)
 			} else {
 				noConfig, err := cmd.Flags().GetBool("no-config")
 				if err != nil {
 					log.Fatalf("Error getting no-config: %v", err)
 				}
-				connectInstance(port, noConfig, debug, direct, noIam, timeout)
+				connectInstance(port, noConfig, debug, direct, noIam, timeout, unixSocket)
 			}
 		},
 	}
@@ -171,6 +175,7 @@ func init() {
 	connectCmd.Flags().BoolP("debug", "", false, "for troubleshooting. you can get cloud-sql-proxy log")
 	connectCmd.Flags().BoolP("direct", "", false, "connect to cloudsql instance directly")
 	connectCmd.Flags().BoolP("no-iam", "", false, "disable auto IAM authentication for cloud-sql-proxy")
+	connectCmd.Flags().StringP("unix-socket", "u", "", "use unix socket instead of TCP port (e.g. /tmp/cloudsql)")
 	connectCmd.Flags().StringP("profile", "p", "", "use saved profile")
 	connectCmd.Flags().Duration("timeout", time.Hour, "automatically disconnect after this duration (0 to disable)")
 	superviseCmd.Flags().Duration("ttl", time.Hour, "kill the proxy after this duration")

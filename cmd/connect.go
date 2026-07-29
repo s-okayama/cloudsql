@@ -237,6 +237,12 @@ func getdbTypeName(instance string, project string) string {
 	return result
 }
 
+func findExistingProxyProcess(connectionName string) bool {
+	command := fmt.Sprintf("ps aux | grep cloud-sql-proxy | grep -v grep | grep '%s'", connectionName)
+	out, err := exec.Command("bash", "-c", command).Output()
+	return err == nil && len(out) > 0
+}
+
 func findExistingProxy(connectionName string) int {
 	command := fmt.Sprintf("ps aux | grep cloud-sql-proxy | grep -v grep | grep '%s'", connectionName)
 	out, err := exec.Command("bash", "-c", command).Output()
@@ -258,16 +264,16 @@ func findExistingProxy(connectionName string) int {
 	return port
 }
 
-func connectInstanceWithProfile(p Profile, port int, debug bool, direct bool, noIam bool, timeout time.Duration) {
-	doConnect(p.Project, p.ConnectionName, p.Instance, p.Database, port, debug, direct, noIam, timeout)
+func connectInstanceWithProfile(p Profile, port int, debug bool, direct bool, noIam bool, timeout time.Duration, unixSocket string) {
+	doConnect(p.Project, p.ConnectionName, p.Instance, p.Database, port, debug, direct, noIam, timeout, unixSocket)
 }
 
-func connectInstance(port int, noConfig bool, debug bool, direct bool, noIam bool, timeout time.Duration) {
+func connectInstance(port int, noConfig bool, debug bool, direct bool, noIam bool, timeout time.Duration, unixSocket string) {
 	project := setProject(noConfig)
 	sqlConnectionName := getInstance(project)
 	sqlInstanceName := strings.Split(sqlConnectionName, ":")
 	database := getDatabase(sqlInstanceName[2], project)
-	doConnect(project, sqlConnectionName, sqlInstanceName[2], database, port, debug, direct, noIam, timeout)
+	doConnect(project, sqlConnectionName, sqlInstanceName[2], database, port, debug, direct, noIam, timeout, unixSocket)
 }
 
 // timeout > 0 のときは supervise サブコマンド経由で起動し、ttl 経過後に
@@ -297,7 +303,15 @@ func printAutoDisconnect(timeout time.Duration) {
 	}
 }
 
-func doConnect(project, sqlConnectionName, instance, database string, port int, debug bool, direct bool, noIam bool, timeout time.Duration) {
+func doConnect(project, sqlConnectionName, instance, database string, port int, debug bool, direct bool, noIam bool, timeout time.Duration, unixSocket string) {
+	if unixSocket != "" {
+		doConnectUnixSocket(project, sqlConnectionName, instance, database, debug, noIam, unixSocket)
+	} else {
+		doConnectTCP(project, sqlConnectionName, instance, database, port, debug, direct, noIam, timeout)
+	}
+}
+
+func doConnectTCP(project, sqlConnectionName, instance, database string, port int, debug bool, direct bool, noIam bool, timeout time.Duration) {
 	if !direct {
 		existingPort := findExistingProxy(sqlConnectionName)
 		if existingPort > 0 {
@@ -452,5 +466,83 @@ func doConnect(project, sqlConnectionName, instance, database string, port int, 
 		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, database)
 		// Temporarily commented out when database is selected because the connection is not possible due to permission issues.
 		//_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --host=127.0.0.1 --port=%d --database=%s\n", re.ReplaceAllString(userName, ""), port, database)
+	}
+}
+
+func doConnectUnixSocket(project, sqlConnectionName, instance, database string, debug bool, noIam bool, unixSocket string) {
+	dbTypeName := getdbTypeName(instance, project)
+	userName := getUser()
+
+	boldGreen := color.New(color.FgGreen, color.Bold)
+	boldBlue := color.New(color.FgBlue, color.Bold)
+
+	if err := os.MkdirAll(unixSocket, 0755); err != nil {
+		log.Fatalf("Failed to create unix socket directory %s: %v", unixSocket, err)
+	}
+
+	sanitizedName := strings.ReplaceAll(sqlConnectionName, ":", "_")
+	socketPath := filepath.Join(unixSocket, sanitizedName)
+
+	if _, err := os.Stat(socketPath); err == nil {
+		if findExistingProxyProcess(sqlConnectionName) {
+			color.Yellow("Already connected to %s via unix socket", sqlConnectionName)
+			color.Blue("Can connect using:")
+			if strings.Contains(dbTypeName, "POSTGRES") {
+				_, _ = boldGreen.Printf("psql -h %s -U %s -d %s\n", filepath.Dir(socketPath), userName, database)
+			}
+			if strings.Contains(dbTypeName, "MYSQL") {
+				var re = regexp.MustCompile("@.*")
+				_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --socket=%s --database=%s\n", re.ReplaceAllString(userName, ""), socketPath, database)
+			}
+			return
+		}
+		os.Remove(socketPath)
+	}
+
+	instanceArg := fmt.Sprintf("'%s?unix-socket-path=%s'", sqlConnectionName, socketPath)
+
+	iamFlag := " --auto-iam-authn"
+	if noIam {
+		iamFlag = ""
+	}
+
+	if debug {
+		command := fmt.Sprintf("cloud-sql-proxy %s%s --debug --private-ip", instanceArg, iamFlag)
+		color.Blue("[Debug Mode]\nThe following commands are executed in foreground.\n")
+		_, _ = boldBlue.Printf("%s\n", command)
+		color.Blue("Can connect using:")
+		if strings.Contains(dbTypeName, "POSTGRES") {
+			_, _ = boldGreen.Printf("psql -h %s -U %s -d %s\n", unixSocket, userName, database)
+		}
+		if strings.Contains(dbTypeName, "MYSQL") {
+			var re = regexp.MustCompile("@.*")
+			_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --socket=%s --database=%s\n", re.ReplaceAllString(userName, ""), socketPath, database)
+		}
+		debugCmd := exec.Command("bash", "-c", command)
+		debugCmd.Stdout = os.Stdout
+		debugCmd.Stderr = os.Stderr
+		err := debugCmd.Run()
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+
+	command := fmt.Sprintf("cloud-sql-proxy %s%s --private-ip --quiet", instanceArg, iamFlag)
+	cmd := exec.Command("bash", "-c", command)
+	cmd.Stdout = os.Stdout
+	err := cmd.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Cloudsql proxy process is running in background (unix socket), process_id: %d\n", cmd.Process.Pid)
+
+	color.Blue("Can connect using:")
+	if strings.Contains(dbTypeName, "POSTGRES") {
+		_, _ = boldGreen.Printf("psql -h %s -U %s -d %s\n", filepath.Dir(socketPath), userName, database)
+	}
+	if strings.Contains(dbTypeName, "MYSQL") {
+		var re = regexp.MustCompile("@.*")
+		_, _ = boldGreen.Printf("mysql --user=%s --password=`gcloud auth print-access-token` --enable-cleartext-plugin --socket=%s --database=%s\n", re.ReplaceAllString(userName, ""), socketPath, database)
 	}
 }
